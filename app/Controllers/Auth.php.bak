@@ -1,0 +1,477 @@
+<?php
+
+namespace App\Controllers;
+
+use App\Libraries\SmsService;
+use App\Models\OtpModel;
+use App\Models\UserModel;
+use App\Models\VerificacaoBiModel;
+
+class Auth extends BaseController
+{
+    protected SmsService        $sms;
+    protected OtpModel          $otpModel;
+    protected UserModel         $userModel;
+    protected VerificacaoBiModel $biModel;
+
+    public function initController(
+        \CodeIgniter\HTTP\RequestInterface $request,
+        \CodeIgniter\HTTP\ResponseInterface $response,
+        \Psr\Log\LoggerInterface $logger
+    ): void {
+        parent::initController($request, $response, $logger);
+
+        $this->sms       = new SmsService();
+        $this->otpModel  = new OtpModel();
+        $this->userModel = new UserModel();
+        $this->biModel   = new VerificacaoBiModel();
+    }
+
+    // =========================================================================
+    // REGISTO — Passo 1: Solicitar OTP por telemóvel
+    // =========================================================================
+
+    public function showRegisterStep1()
+    {
+        return view('auth/signup');
+    }
+
+    public function processStep1()
+    {
+        $phone = $this->request->getPost('phone');
+        $phone = SmsService::normalizeAngolan((string) $phone);
+
+        // Verificar se já existe account com este número
+        if ($this->userModel->where('phone', $phone)->first()) {
+            return redirect()->back()
+                ->with('error', 'Este número já tem uma conta. Faça login ou recupere a senha.');
+        }
+
+        // Cooldown de 60s
+        $cooldown = $this->otpModel->cooldownRemaining($phone, 'registo');
+        if ($cooldown > 0) {
+            return redirect()->back()
+                ->with('error', "Aguarde {$cooldown} segundos antes de pedir um novo código.");
+        }
+
+        $codigo = $this->otpModel->generateAndSave($phone, 'registo');
+        $this->sms->send($phone, "CasaSegura: O seu código de verificação é {$codigo}. Válido por 5 minutos.");
+
+        // Guardar telemóvel em sessão temporária
+        session()->set('reg_phone', $phone);
+
+        // Em modo desenvolvimento, mostrar código na UI
+        if (env('SMS_FAKE', true)) {
+            session()->setFlashdata('dev_otp_code', $codigo);
+        }
+
+        return redirect()->to('/auth/verify-otp')
+            ->with('info', 'Código enviado! Verifique o seu telemóvel.');
+    }
+
+    // =========================================================================
+    // REGISTO — Passo 2: Verificar OTP
+    // =========================================================================
+
+    public function showVerifyOtp()
+    {
+        if (! session()->get('reg_phone')) {
+            return redirect()->to('/signup');
+        }
+
+        // Calcular tempo restante para o OTP
+        $phone = session()->get('reg_phone');
+        $record = $this->otpModel->where('telemovel', $phone)
+                                 ->where('tipo', 'registo')
+                                 ->where('usado', 0)
+                                 ->where('expira_em >', date('Y-m-d H:i:s'))
+                                 ->orderBy('id', 'DESC')
+                                 ->first();
+
+        $remainingSeconds = 0;
+        if ($record) {
+            $remainingSeconds = max(0, strtotime($record['expira_em']) - time());
+        }
+
+        return view('auth/otp', ['remainingSeconds' => $remainingSeconds]);
+    }
+
+    public function processVerifyOtp()
+    {
+        $phone = session()->get('reg_phone');
+
+        if (! $phone) {
+            return redirect()->to('/signup');
+        }
+
+        $codigo = $this->request->getPost('codigo');
+
+        if (! $this->otpModel->verify($phone, $codigo, 'registo')) {
+            return redirect()->back()
+                ->with('error', 'Código inválido ou expirado. Tente novamente.');
+        }
+
+        // OTP validado — avançar para criar conta
+        session()->set('reg_phone_verified', true);
+
+        return redirect()->to('/auth/step2');
+    }
+
+    // =========================================================================
+    // REGISTO — Passo 3: Dados da conta (nome, senha, tipo)
+    // =========================================================================
+
+    public function showRegisterStep2()
+    {
+        if (! session()->get('reg_phone_verified')) {
+            return redirect()->to('/signup');
+        }
+
+        return view('auth/register');
+    }
+
+    public function processStep2()
+    {
+        if (! session()->get('reg_phone_verified')) {
+            return redirect()->to('/signup');
+        }
+
+        $phone    = session()->get('reg_phone');
+        $fullName = $this->request->getPost('full_name');
+        $senha    = $this->request->getPost('password');
+        $tipo     = $this->request->getPost('user_type');
+
+        // Validações básicas
+        if (strlen($senha) < 8) {
+            return redirect()->back()
+                ->with('error', 'A senha deve ter pelo menos 8 caracteres.')
+                ->withInput();
+        }
+
+        $data = [
+            'phone'      => $phone,
+            'full_name'  => $fullName,
+            'password'   => $senha,
+            'user_type'  => $tipo,
+            'active_role'=> $tipo,
+            'status'     => 'ativo',
+        ];
+
+        $userId = $this->userModel->insert($data);
+
+        if (! $userId) {
+            return redirect()->back()
+                ->with('error', 'Erro ao criar conta. Tente novamente.')
+                ->withInput();
+        }
+
+        // Login automático
+        $user = $this->userModel->find($userId);
+        $this->_startSession($user);
+
+        // Limpar sessão temporária de registo
+        session()->remove(['reg_phone', 'reg_phone_verified']);
+
+        // Proprietários/Intermediários → pedir BI
+        if (in_array($tipo, ['Proprietário', 'Intermediário'])) {
+            return redirect()->to('/auth/verify-bi')
+                ->with('info', 'Conta criada! Agora faça a verificação de identidade para publicar anúncios.');
+        }
+
+        return redirect()->to('/dashboard')
+            ->with('success', 'Bem-vindo à CasaSegura, ' . explode(' ', $fullName)[0] . '! 🎉');
+    }
+
+    // =========================================================================
+    // REGISTO — Passo 4: Upload de BI (só para Proprietários / Intermediários)
+    // =========================================================================
+
+    public function showBiUpload()
+    {
+        $user = $this->userModel->find(session()->get('user_id'));
+
+        // Se já submeteu, redirecionar
+        if ($user && in_array($user['bi_status'], ['pendente', 'aprovado'])) {
+            return redirect()->to('/dashboard')
+                ->with('info', 'A sua verificação já está em processo de análise.');
+        }
+
+        return view('auth/bi_upload');
+    }
+
+    public function processBiUpload()
+    {
+        $userId = session()->get('user_id');
+
+        // Upload das 3 imagens
+        $uploads = [];
+        $uploadDir = WRITEPATH . 'uploads/bi/' . $userId . '/';
+
+        if (! is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        $fields = ['bi_frente' => 'foto_frente', 'bi_verso' => 'foto_verso', 'selfie' => 'selfie'];
+
+        foreach ($fields as $inputName => $dbField) {
+            $file = $this->request->getFile($inputName);
+
+            if (! $file || ! $file->isValid()) {
+                return redirect()->back()
+                    ->with('error', "O ficheiro '{$inputName}' é obrigatório e deve ser válido.");
+            }
+
+            if (! in_array($file->getMimeType(), ['image/jpeg', 'image/png', 'image/webp'])) {
+                return redirect()->back()
+                    ->with('error', 'Apenas imagens JPEG, PNG ou WebP são aceites.');
+            }
+
+            if ($file->getSize() > 5 * 1024 * 1024) {
+                return redirect()->back()
+                    ->with('error', 'Cada ficheiro não pode exceder 5 MB.');
+            }
+
+            $filename = $userId . '_' . $dbField . '_' . time() . '.' . $file->getExtension();
+            $file->move($uploadDir, $filename);
+            $uploads[$dbField] = 'bi/' . $userId . '/' . $filename;
+        }
+
+        // Verificar rejeições anteriores (máximo 3)
+        $rejeicoes = $this->biModel->countRejections($userId);
+        if ($rejeicoes >= 3) {
+            return redirect()->to('/dashboard')
+                ->with('error', 'A sua conta foi bloqueada por múltiplas rejeições de verificação.');
+        }
+
+        // Guardar registo na tabela verificacoes_bi
+        $this->biModel->insert([
+            'user_id'    => $userId,
+            'foto_frente'=> $uploads['foto_frente'],
+            'foto_verso' => $uploads['foto_verso'],
+            'selfie'     => $uploads['selfie'],
+            'resultado'  => 'pendente',
+        ]);
+
+        // Actualizar user
+        $this->userModel->update($userId, [
+            'bi_foto_frente' => $uploads['foto_frente'],
+            'bi_foto_verso'  => $uploads['foto_verso'],
+            'selfie_path'    => $uploads['selfie'],
+            'bi_status'      => 'pendente',
+        ]);
+
+        return redirect()->to('/dashboard')
+            ->with('success', 'Documentos enviados com sucesso! A verificação demora até 24 horas. ⏳');
+    }
+
+    // =========================================================================
+    // LOGIN — Com senha
+    // =========================================================================
+
+    public function showLogin()
+    {
+        return view('auth/login');
+    }
+
+    public function processLogin()
+    {
+        $phone    = SmsService::normalizeAngolan((string) $this->request->getPost('phone'));
+        $password = $this->request->getPost('password');
+
+        $user = $this->userModel->where('phone', $phone)->first();
+
+        // Conta não existe
+        if (! $user) {
+            return redirect()->back()
+                ->with('error', 'Número de telemóvel não encontrado.')
+                ->withInput();
+        }
+
+        // Conta bloqueada
+        if ($this->userModel->isLocked($user)) {
+            $restante = ceil((strtotime($user['locked_until']) - time()) / 60);
+            return redirect()->back()
+                ->with('error', "Conta temporariamente bloqueada. Aguarde {$restante} minuto(s).")
+                ->withInput();
+        }
+
+        // Conta suspensa
+        if ($user['status'] === 'bloqueado') {
+            return redirect()->back()
+                ->with('error', 'A sua conta foi suspensa. Contacte o suporte.');
+        }
+
+        // Verificar senha
+        if (! password_verify($password, $user['password'] ?? '')) {
+            $this->userModel->incrementLoginAttempts($user['id'], (int) $user['login_attempts']);
+
+            $restantes = max(0, 4 - (int) $user['login_attempts']);
+            $msg = $restantes > 0
+                ? "Senha incorrecta. Restam {$restantes} tentativa(s)."
+                : 'Conta bloqueada por 15 minutos por excesso de tentativas.';
+
+            return redirect()->back()->with('error', $msg)->withInput();
+        }
+
+        // Login bem-sucedido
+        $this->userModel->resetLoginAttempts($user['id']);
+        $this->_startSession($user);
+
+        return redirect()->to('/dashboard');
+    }
+
+    // =========================================================================
+    // LOGIN — Com código SMS (sem senha)
+    // =========================================================================
+
+    public function sendLoginOtp()
+    {
+        $phone = SmsService::normalizeAngolan((string) $this->request->getPost('phone'));
+
+        $user = $this->userModel->where('phone', $phone)->first();
+        if (! $user) {
+            return $this->response->setJSON(['ok' => false, 'error' => 'Número não encontrado.']);
+        }
+
+        // Cooldown
+        $cooldown = $this->otpModel->cooldownRemaining($phone, 'login');
+        if ($cooldown > 0) {
+            return $this->response->setJSON(['ok' => false, 'error' => "Aguarde {$cooldown}s."]);
+        }
+
+        $codigo = $this->otpModel->generateAndSave($phone, 'login');
+        $ok     = $this->sms->send($phone, "CasaSegura: O seu código de acesso é {$codigo}. Válido por 5 minutos.");
+
+        session()->set('otp_login_phone', $phone);
+
+        return $this->response->setJSON(['ok' => $ok]);
+    }
+
+    public function processLoginOtp()
+    {
+        $phone  = session()->get('otp_login_phone');
+        $codigo = $this->request->getPost('codigo');
+
+        if (! $phone) {
+            return redirect()->to('/login')->with('error', 'Sessão expirada. Tente novamente.');
+        }
+
+        if (! $this->otpModel->verify($phone, $codigo, 'login')) {
+            return redirect()->back()->with('error', 'Código inválido ou expirado.');
+        }
+
+        $user = $this->userModel->where('phone', $phone)->first();
+        if (! $user) {
+            return redirect()->to('/login')->with('error', 'Conta não encontrada.');
+        }
+
+        $this->userModel->resetLoginAttempts($user['id']);
+        $this->_startSession($user);
+        session()->remove('otp_login_phone');
+
+        return redirect()->to('/dashboard');
+    }
+
+    // =========================================================================
+    // RECUPERAÇÃO DE SENHA
+    // =========================================================================
+
+    public function showForgotPassword()
+    {
+        return view('auth/forgot_password');
+    }
+
+    public function processForgotPassword()
+    {
+        $phone = SmsService::normalizeAngolan((string) $this->request->getPost('phone'));
+
+        $user = $this->userModel->where('phone', $phone)->first();
+        if (! $user) {
+            // Não revelar se o número existe (segurança)
+            return redirect()->to('/auth/reset')
+                ->with('info', 'Se o número estiver registado, receberá um código SMS.');
+        }
+
+        $cooldown = $this->otpModel->cooldownRemaining($phone, 'recuperacao');
+        if ($cooldown > 0) {
+            return redirect()->back()
+                ->with('error', "Aguarde {$cooldown} segundos antes de pedir novo código.");
+        }
+
+        $codigo = $this->otpModel->generateAndSave($phone, 'recuperacao');
+        $this->sms->send($phone, "CasaSegura: Recuperação de senha — código {$codigo}. Válido por 5 minutos. Não partilhe.");
+
+        session()->set('reset_phone', $phone);
+
+        return redirect()->to('/auth/reset')
+            ->with('info', 'Código enviado! Verifique o seu telemóvel.');
+    }
+
+    public function showResetPassword()
+    {
+        return view('auth/reset_password');
+    }
+
+    public function processResetPassword()
+    {
+        $phone    = session()->get('reset_phone');
+        $codigo   = $this->request->getPost('codigo');
+        $novaSenha = $this->request->getPost('password');
+        $confirmar = $this->request->getPost('password_confirm');
+
+        if (! $phone) {
+            return redirect()->to('/forgot-password')
+                ->with('error', 'Sessão expirada. Inicie o processo novamente.');
+        }
+
+        if ($novaSenha !== $confirmar) {
+            return redirect()->back()->with('error', 'As senhas não coincidem.')->withInput();
+        }
+
+        if (strlen($novaSenha) < 8) {
+            return redirect()->back()
+                ->with('error', 'A senha deve ter pelo menos 8 caracteres.')->withInput();
+        }
+
+        if (! $this->otpModel->verify($phone, $codigo, 'recuperacao')) {
+            return redirect()->back()->with('error', 'Código inválido ou expirado.')->withInput();
+        }
+
+        $user = $this->userModel->where('phone', $phone)->first();
+        $this->userModel->update($user['id'], [
+            'password'       => $novaSenha,
+            'login_attempts' => 0,
+            'locked_until'   => null,
+        ]);
+
+        session()->remove('reset_phone');
+
+        return redirect()->to('/login')
+            ->with('success', 'Senha alterada com sucesso! Faça login com a nova senha.');
+    }
+
+    // =========================================================================
+    // LOGOUT
+    // =========================================================================
+
+    public function logout()
+    {
+        session()->destroy();
+        return redirect()->to('/');
+    }
+
+    // =========================================================================
+    // Helper privado — iniciar sessão
+    // =========================================================================
+
+    private function _startSession(array $user): void
+    {
+        session()->set([
+            'isLoggedIn' => true,
+            'user_id'    => $user['id'],
+            'full_name'  => $user['full_name'],
+            'user_type'  => $user['user_type'],
+            'phone'      => $user['phone'],
+        ]);
+    }
+}
