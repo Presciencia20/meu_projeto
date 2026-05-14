@@ -275,11 +275,31 @@
                 </div>
             </div>
 
-            <div style="background: #ecfdf5; border: 1px solid #10b98120; padding: 1.5rem; border-radius: 24px; color: #065f46; display: flex; gap: 1rem; align-items: center;">
+            <div style="background: #ecfdf5; border: 1px solid #10b98120; padding: 1.5rem; border-radius: 24px; color: #065f46; display: flex; gap: 1rem; align-items: center; margin-bottom: 2rem;">
                 <i class="ph-fill ph-shield-check" style="font-size: 2rem; opacity: 0.6;"></i>
                 <p style="font-size: 0.8rem; font-weight: 700; line-height: 1.5; margin: 0;">
                     AVISO DE SEGURANÇA: O seu anúncio será analisado pela nossa equipa de moderação antes de ser publicado.
                 </p>
+            </div>
+
+            <div style="background: #f8fafc; padding: 2rem; border-radius: 24px; border: 1px solid var(--gray-200);">
+                <h3 style="font-family: 'Outfit'; font-weight: 800; font-size: 1.2rem; color: var(--gray-800); margin-bottom: 1rem;">Documentação Legal</h3>
+                <p style="font-size: 0.85rem; color: var(--gray-500); margin-bottom: 1.5rem;">Para garantir a segurança da plataforma, é obrigatório submeter um documento que comprove a legitimidade do imóvel.</p>
+                
+                <div class="p-input-group">
+                    <label class="p-label">Tipo de Documento</label>
+                    <select name="doc_type" class="input-modern" required>
+                        <option value="titulo_propriedade">Título de Propriedade</option>
+                        <option value="contrato_compra_venda">Contrato de Compra e Venda</option>
+                        <option value="declaracao_posse">Declaração de Posse</option>
+                        <option value="outro">Outro</option>
+                    </select>
+                </div>
+                
+                <div class="p-input-group">
+                    <label class="p-label">Ficheiro (PDF, JPG, PNG)</label>
+                    <input type="file" name="property_doc" class="input-modern" accept=".pdf,image/jpeg,image/png,image/webp" required style="padding: 10px;">
+                </div>
             </div>
         </div>
 
