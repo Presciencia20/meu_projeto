@@ -79,21 +79,34 @@
                         <td style="padding: 1rem;">
                             <?php 
                                 $statusClass = 'status-pendente';
-                                if ($prop['status'] === 'active' || $prop['status'] === 'ativo') $statusClass = 'status-verificado';
-                                if ($prop['status'] === 'rejected' || $prop['status'] === 'rejeitado') $statusClass = 'status-bloqueado';
+                                $statusText = strtoupper($prop['status']);
+                                if (empty($statusText)) $statusText = 'PENDENTE';
+
+                                if ($prop['status'] === 'active' || $prop['status'] === 'ativo' || $prop['status'] === 'available') {
+                                    $statusClass = 'status-verificado';
+                                    $statusText = 'ATIVO';
+                                }
+                                if ($prop['status'] === 'rejected' || $prop['status'] === 'rejeitado') {
+                                    $statusClass = 'status-bloqueado';
+                                    $statusText = 'REJEITADO';
+                                }
                             ?>
                             <span class="status-badge <?= $statusClass ?>">
-                                <?= esc(strtoupper($prop['status'])) ?>
+                                <?= esc($statusText) ?>
                             </span>
                         </td>
                         <td style="padding: 1rem; text-align: right;">
                             <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                                <a href="/admin/properties/view/<?= $prop['id'] ?>" class="btn-circle" title="Ver Detalhes"><i class="ph-bold ph-eye"></i></a>
-                                <?php if ($prop['status'] === 'pending' || $prop['status'] === 'pendente'): ?>
-                                    <a href="/admin/properties/approve/<?= $prop['id'] ?>" class="btn-circle" style="background: #f0fdf4; color: #10b981;" title="Aprovar"><i class="ph-bold ph-check"></i></a>
+                                <a href="/admin/properties/view/<?= $prop['id'] ?>" class="btn-circle" style="background: #e0f2fe; color: #0284c7;" title="Analisar Detalhes"><i class="ph-bold ph-eye"></i></a>
+                                
+                                <?php if (empty($prop['status']) || $prop['status'] === 'pending' || $prop['status'] === 'pendente'): ?>
+                                    <a href="/admin/properties/approve/<?= $prop['id'] ?>" class="btn-circle" style="background: #ecfdf5; color: #10b981;" title="Aceitar / Aprovar"><i class="ph-bold ph-check"></i></a>
                                     <a href="/admin/properties/reject/<?= $prop['id'] ?>" class="btn-circle" style="background: #fef2f2; color: #ef4444;" title="Rejeitar"><i class="ph-bold ph-x"></i></a>
                                 <?php endif; ?>
+                                
                                 <a href="/admin/properties/edit/<?= $prop['id'] ?>" class="btn-circle" style="background: #eef2ff; color: #6366f1;" title="Editar"><i class="ph-bold ph-pencil"></i></a>
+                                
+                                <a href="/admin/properties/delete/<?= $prop['id'] ?>" class="btn-circle" style="background: #fef2f2; color: #ef4444;" title="Remover" onclick="return confirm('Tem certeza que deseja remover este imóvel definitivamente?');"><i class="ph-bold ph-trash"></i></a>
                             </div>
                         </td>
                     </tr>
