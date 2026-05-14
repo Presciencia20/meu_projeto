@@ -152,9 +152,20 @@
                                 </span>
                             </td>
                             <td style="padding: 1.25rem 0;">
-                                <button onclick="openModal(<?= $r['id'] ?>)" class="btn-circle" style="background: var(--app-primary-50); color: var(--app-primary); border: none; width: 40px; height: 40px; cursor: pointer;">
-                                    <i class="ph-bold ph-pencil-simple"></i>
-                                </button>
+                                <div style="display: flex; gap: 8px;">
+                                    <!-- Analisar -->
+                                    <a href="/admin/reports/view/<?= $r['id'] ?>" class="btn-circle" style="background: #e0f2fe; color: #0284c7;" title="Analisar">
+                                        <i class="ph-bold ph-magnifying-glass"></i>
+                                    </a>
+                                    <!-- Aceitar / Resolver -->
+                                    <button onclick="openModal(<?= $r['id'] ?>)" class="btn-circle" style="background: #ecfdf5; color: #10b981; border: none; cursor: pointer;" title="Aceitar / Resolver">
+                                        <i class="ph-bold ph-check"></i>
+                                    </button>
+                                    <!-- Remover (Denúncia ou Imóvel) -->
+                                    <a href="/admin/reports/delete/<?= $r['id'] ?>" class="btn-circle" style="background: #fef2f2; color: #ef4444;" title="Remover" onclick="return confirm('Tem certeza que deseja remover esta denúncia?');">
+                                        <i class="ph-bold ph-trash"></i>
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -202,7 +213,7 @@
     function openModal(id) {
         const modal = document.getElementById('actionModal');
         const form = document.getElementById('modalForm');
-        form.action = '/admin/reports/update/' + id;
+        form.action = '/admin/reports/resolve/' + id;
         modal.style.display = 'flex';
     }
 
