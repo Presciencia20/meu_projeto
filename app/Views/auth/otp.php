@@ -1,297 +1,114 @@
-<?= $this->extend('templates/main') ?>
+<?php $this->extend('templates/main'); ?>
 
-<?= $this->section('title') ?>Verificar Código<?= $this->endSection() ?>
+<?php $this->section('title'); ?>Verificar Código - CasaSegura<?php $this->endSection(); ?>
 
-<?= $this->section('styles') ?>
+<?php $this->section('styles'); ?>
+<link rel="stylesheet" href="/css/auth.css">
 <style>
-    .auth-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 80px 0;
-    }
-
-    .auth-card {
-        background: white;
-        width: 100%;
-        max-width: 480px;
-        padding: 60px 48px;
-        border-radius: 40px;
-        box-shadow: var(--shadow-xl);
-        border: 1px solid var(--slate-100);
-    }
-
-    .auth-header {
-        text-align: center;
-        margin-bottom: 40px;
-    }
-
-    .auth-header h1 {
-        font-size: 2.2rem;
-        font-weight: 900;
-        color: var(--slate-900);
-        margin-bottom: 12px;
-        letter-spacing: -1.5px;
-    }
-
-    .otp-inputs {
-        display: flex;
-        gap: 12px;
-        justify-content: center;
-        margin-bottom: 40px;
-    }
-
-    .otp-digit {
-        width: 52px;
-        height: 64px;
-        text-align: center;
-        font-size: 1.8rem;
-        font-weight: 800;
-        background: var(--slate-50);
-        border: 2px solid var(--slate-100);
-        border-radius: 16px;
-        outline: none;
-        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        color: var(--slate-900);
-    }
-
-    .otp-digit:focus {
-        background: white;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 5px var(--primary-50);
-        transform: translateY(-4px);
-    }
-
-    .otp-digit.filled {
-        border-color: var(--primary-200);
-        background: var(--primary-50);
-    }
-
-    .timer-container {
-        margin-bottom: 40px;
-        text-align: center;
-    }
-
-    .timer-bar {
-        height: 6px;
-        background: var(--slate-100);
-        border-radius: 10px;
-        margin-bottom: 16px;
-        overflow: hidden;
-    }
-
-    .timer-fill {
-        height: 100%;
-        background: var(--primary);
-        border-radius: 10px;
-        transition: width 1s linear;
-    }
-
-    .timer-text {
-        font-size: 0.95rem;
-        color: var(--slate-500);
-        font-weight: 600;
-    }
-
-    .timer-text span {
-        font-weight: 800;
-        color: var(--primary);
-    }
-
-    .resend-link {
-        display: block;
-        text-align: center;
-        margin-top: 32px;
-        font-size: 0.95rem;
-        color: var(--slate-500);
-        font-weight: 500;
-    }
-
-    .resend-link a {
-        color: var(--primary);
-        font-weight: 800;
-        text-decoration: none;
-        margin-left: 4px;
-    }
-
-    .resend-link a:hover { text-decoration: underline; }
-
-    .dev-badge {
-        background: #FFFBEB;
-        border: 1px solid #FEF3C7;
-        color: #92400E;
-        padding: 16px;
-        border-radius: 20px;
-        font-size: 0.9rem;
-        font-weight: 700;
-        margin-bottom: 32px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .step-indicator {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        margin-bottom: 40px;
-    }
-
-    .step-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: var(--slate-100);
-        transition: all 0.3s;
-    }
-
-    .step-dot.active {
-        background: var(--primary);
-        width: 32px;
-        border-radius: 6px;
-    }
-
-    .step-dot.done {
-        background: var(--primary-200);
-    }
+    .otp-inputs { display: flex; gap: 10px; justify-content: center; margin-bottom: 24px; }
+    .otp-digit { width: 50px; height: 64px; text-align: center; font-size: 1.8rem; font-weight: 900; background: #f8f9fa; border: 2px solid transparent; border-radius: 18px; outline: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); color: var(--app-secondary); }
+    .otp-digit:focus { background: white; border-color: var(--app-primary); box-shadow: 0 8px 20px rgba(255, 107, 53, 0.1); transform: translateY(-3px); }
+    .otp-digit.filled { background: #fff7ed; border-color: #ffedd5; }
+    
+    .timer-container { margin-bottom: 32px; text-align: center; }
+    .timer-bar { height: 6px; background: #f0f2f5; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+    .timer-fill { height: 100%; background: var(--app-primary); border-radius: 10px; transition: width 1s linear; width: 100%; }
+    .timer-text { font-size: 0.9rem; color: var(--gray-500); font-weight: 700; }
+    .timer-text span { color: var(--app-primary); font-weight: 900; }
 </style>
-<?= $this->endSection() ?>
+<?php $this->endSection(); ?>
 
-<?= $this->section('content') ?>
-    <div class="auth-container">
-        <div class="auth-card animate-fade-in">
+<?php $this->section('content'); ?>
+<div class="auth-card">
+    <a href="/" class="logo-app">
+        <img src="/img/logo.png" alt="CasaSegura">
+        <span>CasaSegura</span>
+    </a>
+    <h2 class="auth-title">Verificar Código</h2>
+    <p style="color: var(--gray-500); margin-bottom: 24px; font-weight: 500;">
+        Introduza o código de 6 dígitos enviado para<br>
+        <strong style="color: var(--app-secondary); font-weight: 800;"><?= esc($identifier ?? session()->get('reg_identifier')) ?></strong>
+    </p>
 
-            <div class="step-indicator">
-                <div class="step-dot done"></div>
-                <div class="step-dot active"></div>
-                <div class="step-dot"></div>
-            </div>
-
-            <div class="auth-header">
-                <div class="logo-icon" style="margin: 0 auto 24px; background: var(--secondary-50); color: var(--secondary);">
-                    <i data-lucide="shield-check" style="width: 32px; height: 32px;"></i>
-                </div>
-                <h1>Verificar Identidade</h1>
-                <p style="color: var(--slate-500); font-weight: 500;">
-                    Introduza o código de 6 dígitos enviado para<br>
-                    <strong style="color: var(--slate-900); font-weight: 800;"><?= esc(session()->get('reg_phone')) ?></strong>
-                </p>
-            </div>
-
-            <?php if (session()->getFlashdata('error')): ?>
-                <div class="alert alert-error">
-                    <?= session()->getFlashdata('error') ?>
-                </div>
-            <?php endif; ?>
-
-            <?php if (session()->getFlashdata('info')): ?>
-                <div class="alert alert-info">
-                    <?= session()->getFlashdata('info') ?>
-                </div>
-            <?php endif; ?>
-
-            <?php
-            $devCode = session()->getFlashdata('dev_otp_code');
-            if ($devCode): ?>
-                <div class="dev-badge">
-                    <i data-lucide="terminal" style="width:18px;height:18px;flex-shrink:0;"></i>
-                    <span>[DEV] Código SMS: <strong><?= esc($devCode) ?></strong></span>
-                </div>
-            <?php endif; ?>
-
-            <div class="timer-container">
-                <div class="timer-bar">
-                    <div class="timer-fill" id="timerFill"></div>
-                </div>
-                <p class="timer-text">Expira em <span id="countdown">5:00</span></p>
-            </div>
-
-            <form action="/auth/verify-otp" method="POST" id="otpForm">
-                <?= csrf_field() ?>
-                <input type="hidden" name="codigo" id="codigoHidden">
-
-                <div class="otp-inputs" id="otpInputs">
-                    <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" id="d1">
-                    <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" id="d2">
-                    <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" id="d3">
-                    <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" id="d4">
-                    <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" id="d5">
-                    <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" id="d6">
-                </div>
-
-                <button type="submit" class="btn-primary" id="submitBtn" style="width: 100%; font-size: 1.1rem; padding: 18px; border-radius: 20px; font-weight: 800;" disabled>
-                    Validar Código →
-                </button>
-            </form>
-
-            <p class="resend-link">
-                Não recebeu o código?
-                <a href="/auth/step1" id="resendLink">Reenviar</a>
-            </p>
+    <?php if (session()->getFlashdata('dev_otp_code')): ?>
+        <div style="background: #fffbeb; border: 1px solid #fef3c7; color: #92400e; padding: 14px; border-radius: 12px; font-size: 0.85rem; font-weight: 700; margin-bottom: 24px; display: flex; align-items: center; gap: 8px;">
+            <i class="ph-bold ph-terminal-window"></i>
+            [DEV] Código: <?= session()->getFlashdata('dev_otp_code') ?>
         </div>
-    </div>
-<?= $this->endSection() ?>
+    <?php endif; ?>
 
-<?= $this->section('scripts') ?>
+    <div class="timer-container">
+        <div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
+        <p class="timer-text">Expira em <span id="countdown">5:00</span></p>
+    </div>
+
+    <form action="/auth/verify-otp" method="POST" class="auth-form" id="otpForm">
+        <?= csrf_field() ?>
+        <input type="hidden" name="codigo" id="codigoHidden">
+        
+        <div class="otp-inputs" id="otpInputs">
+            <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" id="d1">
+            <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" id="d2">
+            <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" id="d3">
+            <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" id="d4">
+            <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" id="d5">
+            <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" id="d6">
+        </div>
+        
+        <button type="submit" class="btn btn-primary btn-large" id="submitBtn" disabled>
+            Validar Código <i class="ph-bold ph-check"></i>
+        </button>
+    </form>
+    
+    <form action="<?= site_url('auth/step1') ?>" method="POST" id="resendForm" style="display:none;">
+        <?= csrf_field() ?>
+        <input type="hidden" name="identifier" value="<?= esc(session()->get('reg_identifier')) ?>">
+        <input type="hidden" name="method" value="<?= esc(session()->get('reg_method')) ?>">
+    </form>
+
+    <div class="auth-links" style="justify-content: center; margin-top: 24px;">
+        <span style="color: var(--gray-500); font-weight: 600;">Não recebeu?</span>
+        <a href="javascript:void(0)" onclick="document.getElementById('resendForm').submit()" class="link-primary" style="font-weight: 800;">Reenviar Agora</a>
+    </div>
+</div>
+<?php $this->endSection(); ?>
+
+<?php $this->section('scripts'); ?>
 <script>
 (function () {
-    const digits  = Array.from(document.querySelectorAll('.otp-digit'));
-    const hidden  = document.getElementById('codigoHidden');
-    const form    = document.getElementById('otpForm');
-    const btn     = document.getElementById('submitBtn');
-    const fill    = document.getElementById('timerFill');
-    const display = document.getElementById('countdown');
-
-    // ---------- Auto-focus & navigation ----------
+    const digits = document.querySelectorAll('.otp-digit');
+    const hidden = document.getElementById('codigoHidden');
+    const btn    = document.getElementById('submitBtn');
+    
     digits.forEach((el, idx) => {
         el.addEventListener('input', () => {
-            el.value = el.value.replace(/[^0-9]/, '');
-            if (el.value && idx < digits.length - 1) digits[idx + 1].focus();
+            el.value = el.value.replace(/\D/g, '');
+            if (el.value && idx < 5) digits[idx + 1].focus();
             el.classList.toggle('filled', !!el.value);
             sync();
         });
-
         el.addEventListener('keydown', (e) => {
             if (e.key === 'Backspace' && !el.value && idx > 0) {
                 digits[idx - 1].focus();
-                digits[idx - 1].value = '';
+                digits[idx - 1].value = ''; // Clean previous on backspace for better UX
                 digits[idx - 1].classList.remove('filled');
-                sync();
             }
-        });
-
-        el.addEventListener('paste', (e) => {
-            e.preventDefault();
-            const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-            pasted.split('').forEach((ch, i) => {
-                if (digits[i]) {
-                    digits[i].value = ch;
-                    digits[i].classList.add('filled');
-                }
-            });
-            if (pasted.length === 6) { digits[5].focus(); sync(); }
         });
     });
 
     function sync() {
-        const code = digits.map(d => d.value).join('');
-        hidden.value = code;
-        btn.disabled = code.length !== 6;
+        const val = Array.from(digits).map(d => d.value).join('');
+        hidden.value = val;
+        btn.disabled = val.length !== 6;
     }
 
-    digits[0].focus();
-
-    // ---------- Countdown based on server remaining time ----------
     const TOTAL = 5 * 60;
     let remaining = <?= $remainingSeconds ?? (5 * 60) ?>;
+    const fill = document.getElementById('timerFill');
+    const display = document.getElementById('countdown');
 
     function tick() {
-        if (remaining <= 0) {
-            display.textContent = '0:00';
-            fill.style.width = '0%';
-            display.style.color = '#dc2626';
-            return;
-        }
+        if (remaining <= 0) return;
         remaining--;
         const m = Math.floor(remaining / 60);
         const s = remaining % 60;
@@ -299,9 +116,8 @@
         fill.style.width = ((remaining / TOTAL) * 100) + '%';
         setTimeout(tick, 1000);
     }
-
-    fill.style.width = '100%';
     setTimeout(tick, 1000);
+    digits[0].focus();
 })();
 </script>
-<?= $this->endSection() ?>
+<?php $this->endSection(); ?>

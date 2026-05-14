@@ -1,157 +1,207 @@
-<?= $this->extend('templates/main') ?>
+<?php $this->extend('templates/main'); ?>
 
-<?= $this->section('title') ?>Mensagens<?= $this->endSection() ?>
+<?php $this->section('title'); ?>Minhas Conversas - CasaSegura<?php $this->endSection(); ?>
 
-<?= $this->section('styles') ?>
+<?php $this->section('styles'); ?>
 <style>
-    .chat-layout {
+    .chat-inbox-layout {
         display: grid;
         grid-template-columns: 1fr;
-        gap: 32px;
-        padding-bottom: 60px;
+        gap: 2rem;
     }
 
     @media (min-width: 992px) {
-        .chat-layout { grid-template-columns: 350px 1fr; }
+        .chat-inbox-layout { grid-template-columns: 380px 1fr; }
     }
 
-    .conversation-list {
+    .inbox-list-premium {
         background: white;
-        border-radius: 40px;
-        border: 1px solid var(--slate-100);
+        border-radius: 32px;
+        border: 1px solid var(--gray-200);
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
         overflow: hidden;
-        height: 80vh;
+        height: calc(100vh - 200px);
         display: flex;
         flex-direction: column;
-        box-shadow: var(--shadow-xl);
     }
 
-    .conv-header {
-        padding: 32px;
-        border-bottom: 1px solid var(--slate-100);
+    .inbox-header {
+        padding: 2rem;
+        border-bottom: 1px solid var(--gray-100);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .inbox-title {
+        font-family: 'Outfit';
         font-weight: 900;
         font-size: 1.5rem;
-        color: var(--slate-900);
+        color: var(--gray-800);
         letter-spacing: -1px;
     }
 
-    .conv-items {
+    .inbox-items {
         flex: 1;
         overflow-y: auto;
-        padding: 16px;
+        padding: 1rem;
     }
 
-    .conv-item {
+    .chat-item-link {
         display: flex;
-        gap: 16px;
-        padding: 20px;
-        border-radius: 24px;
+        gap: 1rem;
+        padding: 1.25rem;
+        border-radius: 20px;
         text-decoration: none;
         color: inherit;
-        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        margin-bottom: 8px;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        margin-bottom: 0.5rem;
+        border: 1px solid transparent;
     }
 
-    .conv-item:hover {
-        background: var(--slate-50);
+    .chat-item-link:hover {
+        background: #f8fafc;
         transform: translateX(4px);
     }
 
-    .conv-item.active {
-        background: var(--primary-50);
-        border: 1px solid var(--primary-100);
+    .chat-item-link.active {
+        background: var(--app-primary-50);
+        border-color: rgba(37, 99, 235, 0.1);
     }
 
-    .avatar {
-        width: 56px;
-        height: 56px;
-        background: var(--primary-100);
-        color: var(--primary);
-        border-radius: 18px;
+    .avatar-inbox {
+        width: 52px;
+        height: 52px;
+        background: var(--gray-100);
+        color: var(--gray-600);
+        border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 900;
-        font-size: 1.25rem;
+        font-weight: 800;
+        font-size: 1.2rem;
         flex-shrink: 0;
-        box-shadow: 0 4px 10px rgba(26, 86, 219, 0.1);
+        position: relative;
     }
 
-    .conv-meta {
+    .chat-item-link.active .avatar-inbox {
+        background: var(--app-primary);
+        color: white;
+    }
+
+    .chat-meta {
         flex: 1;
         min-width: 0;
     }
 
-    .conv-name {
+    .chat-user-name {
+        font-family: 'Outfit';
+        font-weight: 800;
+        font-size: 1rem;
+        color: var(--gray-800);
+        margin-bottom: 2px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .chat-last-msg {
+        font-size: 0.85rem;
+        color: var(--gray-500);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: 500;
+    }
+
+    .property-tag {
+        font-size: 0.7rem;
+        color: var(--app-primary);
         font-weight: 700;
-        font-size: 0.95rem;
-        margin-bottom: 4px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        text-transform: uppercase;
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
     }
 
-    .conv-last {
-        font-size: 0.8rem;
-        color: var(--slate-500);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .empty-chat {
+    .empty-state-chat {
         background: white;
-        border-radius: 40px;
+        border-radius: 32px;
+        border: 1px solid var(--gray-200);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02);
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         text-align: center;
-        padding: 60px;
-        color: var(--slate-400);
+        padding: 4rem;
+        height: 100%;
+    }
+
+    .empty-icon-box {
+        width: 80px;
+        height: 80px;
+        background: var(--app-primary-50);
+        color: var(--app-primary);
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        margin-bottom: 1.5rem;
     }
 </style>
-<?= $this->endSection() ?>
+<?php $this->endSection(); ?>
 
-<?= $this->section('content') ?>
-    <div class="chat-layout">
-        <aside class="conversation-list animate-fade-in">
-            <div class="conv-header">Conversas</div>
-            <div class="conv-items">
-                <?php if (empty($conversations)): ?>
-                    <div style="padding: 40px; text-align: center; color: var(--slate-400);">
-                        Nenhuma conversa iniciada.
-                    </div>
-                <?php else: ?>
-                    <?php foreach ($conversations as $conv): ?>
-                        <a href="/chat/view/<?= $conv['id'] ?>" class="conv-item">
-                            <div class="avatar">
-                                <?= strtoupper(substr($conv['other_user_name'], 0, 1)) ?>
-                            </div>
-                            <div class="conv-meta">
-                                <div class="conv-name" style="font-weight: 800; color: var(--slate-900);"><?= $conv['other_user_name'] ?></div>
-                                <div style="font-size: 0.8rem; color: var(--primary); font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
-                                    <i data-lucide="home" style="width: 12px; height: 12px;"></i>
-                                    <?= $conv['property_title'] ?>
-                                </div>
-                                <div class="conv-last" style="color: var(--slate-500); font-weight: 500;"><?= $conv['last_message'] ?? 'Inicie a conversa...' ?></div>
-                            </div>
-                        </a>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
-        </aside>
+<?php $this->section('content'); ?>
+<div class="chat-inbox-layout">
+    <!-- Sidebar: Conversations -->
+    <aside class="inbox-list-premium animate-fade-in">
+        <div class="inbox-header">
+            <h2 class="inbox-title">Conversas</h2>
+            <i class="ph-bold ph-chat-centered-text" style="font-size: 1.5rem; color: var(--app-primary);"></i>
+        </div>
 
-        <main>
-            <div class="empty-chat animate-fade-in" style="height: 80vh; background: white; border: 1px solid var(--slate-100); box-shadow: var(--shadow-md);">
-                <div style="width: 120px; height: 120px; background: var(--primary-50); border-radius: 40px; display: flex; align-items: center; justify-content: center; margin-bottom: 32px; color: var(--primary);">
-                    <i data-lucide="message-square" style="width: 56px; height: 56px;"></i>
+        <div class="inbox-items">
+            <?php if (empty($conversations)): ?>
+                <div style="padding: 3rem 1rem; text-align: center; color: var(--gray-400);">
+                    <p style="font-weight: 600;">A sua caixa de entrada está vazia.</p>
                 </div>
-                <h2 style="color: var(--slate-900); font-weight: 900; margin-bottom: 12px; font-size: 1.75rem; letter-spacing: -0.5px;">Mensagens Seguras</h2>
-                <p style="color: var(--slate-500); font-size: 1.1rem; max-width: 400px; line-height: 1.6; font-weight: 500;">
-                    Escolha um contacto à esquerda para gerir o seu aluguer com total segurança.
-                </p>
+            <?php else: ?>
+                <?php foreach ($conversations as $conv): ?>
+                    <a href="/chat/view/<?= $conv['id'] ?>" class="chat-item-link">
+                        <div class="avatar-inbox">
+                            <?= strtoupper(substr($conv['other_user_name'] ?? 'U', 0, 1)) ?>
+                        </div>
+                        <div class="chat-meta">
+                            <div class="chat-user-name">
+                                <span><?= esc($conv['other_user_name']) ?></span>
+                                <span style="font-size: 0.7rem; color: var(--gray-400); font-family: 'Inter'; font-weight: 600;">RECEPÇÃO</span>
+                            </div>
+                            <div class="property-tag">
+                                <i class="ph-bold ph-house-line"></i> <?= esc($conv['property_title']) ?>
+                            </div>
+                            <div class="chat-last-msg"><?= esc($conv['last_message'] ?? 'Inicie a conversa...') ?></div>
+                        </div>
+                    </a>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </aside>
+
+    <!-- Main Placeholder (Desktop only) -->
+    <main class="hide-mobile" style="height: calc(100vh - 200px);">
+        <div class="empty-state-chat animate-fade-in">
+            <div class="empty-icon-box">
+                <i class="ph-bold ph-chats-circle"></i>
             </div>
-        </main>
-    </div>
-<?= $this->endSection() ?>
+            <h3 style="font-family: 'Outfit'; font-weight: 900; font-size: 1.75rem; color: var(--gray-800); margin-bottom: 0.5rem;">Canais Seguros</h3>
+            <p style="color: var(--gray-500); font-weight: 600; line-height: 1.6; max-width: 320px;">
+                Seus chats são monitorizados para sua segurança contra burlas. Não partilhe documentos confidenciais.
+            </p>
+        </div>
+    </main>
+</div>
+<?php $this->endSection(); ?>
+

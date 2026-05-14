@@ -1,118 +1,74 @@
-<?= $this->extend('templates/auth') ?>
+<?= $this->extend('templates/main') ?>
 
-<?= $this->section('title') ?>Entrar<?= $this->endSection() ?>
+<?= $this->section('title') ?>Entrar | CasaSegura<?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>
 <style>
-    .auth-header {
-        margin-bottom: 32px;
-    }
-
-    .auth-header h1 {
-        font-size: 2rem;
-        font-weight: 800;
-        color: var(--slate-900);
-        margin-bottom: 8px;
-        letter-spacing: -0.5px;
-    }
-
-    .form-group {
-        margin-bottom: 20px;
-    }
-
-    .form-group label {
-        display: block;
-        font-weight: 600;
-        font-size: 0.85rem;
-        color: var(--slate-700);
-        margin-bottom: 8px;
-    }
-
-    .forgot-link {
-        font-size: 0.75rem;
-        color: var(--primary);
-        font-weight: 600;
-        text-decoration: none;
-    }
-
-    .footer-link {
-        text-align: center;
-        margin-top: 24px;
-        color: var(--slate-500);
-        font-size: 0.9rem;
-    }
-
-    .footer-link a {
-        color: var(--primary);
-        font-weight: 700;
-        text-decoration: none;
-    }
+    .auth-title { font-size: 2.5rem; font-weight: 800; font-family: 'Outfit'; letter-spacing: -0.04em; margin-bottom: 8px; color: var(--app-text); }
+    .auth-subtitle { font-size: 1rem; color: var(--gray-500); font-weight: 500; margin-bottom: 40px; }
+    
+    .form-group { margin-bottom: 24px; text-align: left; }
+    .form-group label { display: block; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gray-500); margin-bottom: 10px; margin-left: 4px; }
+    
+    .register-footer { margin-top: 32px; font-weight: 600; color: var(--gray-400); font-size: 0.95rem; }
 </style>
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
-    <div class="auth-header animate-fade-in">
-        <h1>Bem-vindo de volta</h1>
-        <p style="color: var(--slate-500)">Aceda à sua conta para gerir os seus imóveis.</p>
+    <div style="text-align: center; margin-bottom: 40px;">
+        <div style="margin-bottom: 24px; display: flex; justify-content: center;">
+            <a href="/" class="logo-app" style="justify-content: center; transform: scale(1.2);">
+                <img src="/img/logo.png" alt="CasaSegura" onerror="this.src='/img/logo_alt.png'">
+                <span>CasaSegura</span>
+            </a>
+        </div>
+        <h1 class="auth-title">Entrar na Conta</h1>
+        <p class="auth-subtitle">Escolha o modo seguro de viver e investir.</p>
     </div>
 
-    <?php if (session()->getFlashdata('error')): ?>
-        <div class="alert alert-error">
-            <i data-lucide="alert-circle" style="width: 18px;"></i>
-            <?= session()->getFlashdata('error') ?>
-        </div>
-    <?php endif; ?>
-
-    <?php if (session()->getFlashdata('success')): ?>
-        <div class="alert alert-success" style="background: #ECFDF5; color: #059669; border: 1px solid rgba(5, 150, 105, 0.1);">
-            <i data-lucide="check-circle" style="width: 18px;"></i>
-            <?= session()->getFlashdata('success') ?>
-        </div>
-    <?php endif; ?>
-
-    <form action="/auth/login" method="POST" class="animate-fade-in" style="animation-delay: 0.1s;">
+    <form action="/auth/login" method="POST">
         <?= csrf_field() ?>
+        
         <div class="form-group">
-            <label>Nº de Telemóvel</label>
-            <input type="tel" name="phone" class="input-modern" placeholder="9xx xxx xxx" required>
-        </div>
-
-        <div class="form-group">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <label style="margin-bottom: 0;">Palavra-passe</label>
-                <a href="#" class="forgot-link">Esqueceu-se?</a>
+            <label>E-mail ou Telefone</label>
+            <div style="position: relative;">
+                <i class="ph-duotone ph-user" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 20px; color: #94a3b8;"></i>
+                <input type="text" name="email" class="input-modern" placeholder="Ex: exemplo@email.com" required autofocus style="padding-left: 48px;">
             </div>
-            <input type="password" name="password" class="input-modern" placeholder="••••••••" required>
         </div>
 
-        <button type="submit" class="btn-primary" style="width: 100%; margin-top: 8px;">Entrar no Portal</button>
+        <div class="form-group">
+            <label>Palavra-passe</label>
+            <div style="position: relative;">
+                <i class="ph-duotone ph-lock" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 20px; color: #94a3b8;"></i>
+                <input type="password" name="password" class="input-modern" placeholder="••••••••" required style="padding-left: 48px;">
+            </div>
+        </div>
+
+        <button type="submit" class="btn-app-primary" style="margin-top: 8px;">
+            Entrar agora <i class="ph-bold ph-arrow-right" style="font-size: 18px;"></i>
+        </button>
     </form>
 
-    <p class="footer-link animate-fade-in" style="animation-delay: 0.2s;">
-        Não tem conta? <a href="/signup">Registar agora</a>
-    </p>
+    <div style="text-align: center; margin-top: 32px; display: flex; flex-direction: column; gap: 12px;">
+        <a href="/signup" style="color: var(--app-primary); font-weight: 800; text-decoration: none; font-size: 1rem;">Criar conta agora</a>
+        <a href="/forgot-password" style="color: #94a3b8; font-weight: 600; text-decoration: none; font-size: 0.9rem;">Esqueci a senha</a>
+    </div>
 <?= $this->endSection() ?>
 
 <?= $this->section('info') ?>
     <div class="info-item">
-        <div class="info-icon"><i data-lucide="shield-check"></i></div>
+        <div class="info-icon"><i class="ph-duotone ph-user-circle-check"></i></div>
         <div class="info-text">
-            <h4>Segurança em Primeiro Lugar</h4>
-            <p>Todos os utilizadores passam por um processo de verificação rigoroso para evitar burlas.</p>
+            <h4>Verificação Real</h4>
+            <p>Usamos reconhecimento facial e BI para manter a comunidade livre de burladores.</p>
         </div>
     </div>
     <div class="info-item">
-        <div class="info-icon"><i data-lucide="lock"></i></div>
+        <div class="info-icon"><i class="ph-duotone ph-file-text"></i></div>
         <div class="info-text">
-            <h4>Contas Escrow</h4>
-            <p>O seu dinheiro fica protegido até que o contrato seja validado e ambas as partes estejam satisfeitas.</p>
-        </div>
-    </div>
-    <div class="info-item">
-        <div class="info-icon"><i data-lucide="help-circle"></i></div>
-        <div class="info-text">
-            <h4>Suporte 24/7</h4>
-            <p>A nossa equipa está pronta para ajudar em qualquer fase da sua negociação imobiliária.</p>
+            <h4>Contratos Legais</h4>
+            <p>Geramos documentos juridicamente válidos em Angola com apenas alguns cliques.</p>
         </div>
     </div>
 <?= $this->endSection() ?>

@@ -1,0 +1,15 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Redireciona a raiz para o index.php
+    RewriteRule ^$ public/index.php [L]
+
+    # Passa todos os assets (CSS, Imagens, etc) diretos para a pasta public se existirem
+    RewriteCond %{DOCUMENT_ROOT}/public/$1 -f
+    RewriteRule ^(.*)$ public/$1 [L]
+
+    # Tudo o resto (URLs como /comprar, /vender) vai para o router do CodeIgniter
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ public/index.php/$1 [L]
+</IfModule>

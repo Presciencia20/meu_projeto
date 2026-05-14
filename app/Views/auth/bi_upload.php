@@ -13,9 +13,14 @@
     .verify-card {
         background: white;
         border-radius: 32px;
-        padding: 48px;
+        padding: 24px;
         box-shadow: var(--shadow-xl);
         border: 1px solid var(--slate-100);
+    }
+
+    @media (max-width: 768px) {
+        .verify-card { padding: 24px; }
+        .verify-header h1 { font-size: 1.8rem; }
     }
 
     .verify-header {
@@ -152,13 +157,6 @@
                 <p>Certifique-se de que a foto está bem iluminada, sem reflexos e que todos os dados do BI estão perfeitamente legíveis. A selfie deve mostrar o seu rosto claramente.</p>
             </div>
         </div>
-
-        <?php if (session()->getFlashdata('error')): ?>
-            <div class="alert alert-error">
-                <i data-lucide="alert-circle"></i>
-                <?= session()->getFlashdata('error') ?>
-            </div>
-        <?php endif; ?>
 
         <form action="/auth/verify-bi" method="POST" enctype="multipart/form-data">
             <div class="upload-grid">

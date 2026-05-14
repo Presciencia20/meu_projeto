@@ -19,6 +19,9 @@ class UserModel extends Model
         'bi_number',
         'password',
         'user_type',
+        'is_admin',
+        'is_owner',
+        'is_client',
         'active_role',
         'status',
         'bi_status',
@@ -27,6 +30,9 @@ class UserModel extends Model
         'selfie_path',
         'is_verified_user',
         'verification_data',
+        'balance',
+        'plan_id',
+        'plan_expires_at',
         'login_attempts',
         'locked_until',
         'last_login',
@@ -164,10 +170,10 @@ class UserModel extends Model
     /**
      * Retorna informações visuais do selo baseado no nível de confiança.
      */
-    public function getBadgeInfo(array $user): array
+    public function getBadgeInfo(?array $user): array
     {
-        $level = $this->getTrustLevel($user);
-        $type = $user['user_type'];
+        $level = $user ? $this->getTrustLevel($user) : 0;
+        $type = $user['user_type'] ?? 'Inquilino';
 
         $badges = [
             0 => ['icon' => '❓', 'label' => 'Não Verificado', 'class' => 'badge-none', 'color' => '#6c757d'],

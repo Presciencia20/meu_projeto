@@ -1,379 +1,244 @@
 <?= $this->extend('templates/main') ?>
 
-<?= $this->section('title') ?>Comprar Imóvel em Angola<?= $this->endSection() ?>
+<?= $this->section('title') ?>Comprar Imóvel | CasaSegura<?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>
 <style>
-    /* Page Hero */
-    .page-hero {
-        padding: 60px 0 40px;
-        text-align: center;
-    }
-
-    .page-hero h1 {
-        font-size: 3.5rem;
-        font-weight: 900;
-        color: var(--slate-900);
-        margin-bottom: 24px;
-        letter-spacing: -2px;
-        line-height: 1;
-    }
-
-    .page-hero p {
-        color: var(--slate-500);
-        font-size: 1.2rem;
-        max-width: 640px;
-        margin: 0 auto;
-        font-weight: 500;
-        line-height: 1.8;
-    }
-
-    /* Filters */
-    .filters-bar {
+    /* Estilo App para Listagens (Sincronizado com Alugar) */
+    .filter-chips {
         display: flex;
-        gap: 20px;
-        flex-wrap: wrap;
-        align-items: center;
-        background: white;
-        padding: 12px;
-        border-radius: 32px;
-        border: 1px solid var(--slate-100);
-        box-shadow: var(--shadow-xl);
-        margin: 40px auto 80px;
-        max-width: 1000px;
-    }
-
-    .filter-group {
-        display: flex;
-        align-items: center;
         gap: 12px;
-        flex: 1;
-        min-width: 200px;
-        padding: 0 20px;
-        border-right: 1px solid var(--slate-100);
+        overflow-x: auto;
+        padding: 5px 2px 20px;
+        margin-bottom: 20px;
+        scrollbar-width: none;
     }
+    .filter-chips::-webkit-scrollbar { display: none; }
 
-    .filter-group:last-of-type {
-        border-right: none;
-    }
-
-    .filter-group i { color: var(--primary); flex-shrink: 0; width: 20px; }
-    
-    .filter-group select,
-    .filter-group input {
-        border: none;
-        background: transparent;
-        outline: none;
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: var(--slate-900);
-        width: 100%;
-        padding: 16px 0;
-    }
-
-    /* Stats Banner */
-    .stats-row {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 32px;
-        margin-bottom: 80px;
-    }
-
-    .stat-card {
+    .chip {
+        padding: 10px 20px;
         background: white;
-        border: 1px solid var(--slate-100);
-        border-radius: 32px;
-        padding: 40px 32px;
-        text-align: center;
-        transition: transform 0.3s;
-    }
-
-    .stat-card:hover { transform: translateY(-5px); }
-
-    .stat-card .stat-number {
-        font-size: 2.5rem;
-        font-weight: 900;
-        color: var(--primary);
-        line-height: 1;
-        margin-bottom: 8px;
-        letter-spacing: -1px;
-    }
-
-    .stat-card .stat-label {
-        font-size: 0.9rem;
-        color: var(--slate-500);
+        border: 1px solid var(--gray-100);
+        border-radius: 50px;
+        font-size: 0.85rem;
         font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    /* Property Grid */
-    .section-header {
+        text-decoration: none;
+        color: var(--gray-600);
+        white-space: nowrap;
+        cursor: pointer;
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        margin-bottom: 40px;
+        gap: 8px;
+        transition: all 0.2s;
     }
-
-    .section-header h2 {
-        font-size: 2rem;
-        font-weight: 800;
-        color: var(--slate-900);
-        letter-spacing: -1px;
+    .chip.active {
+        background: var(--app-primary);
+        color: white;
+        border-color: var(--app-primary);
+        box-shadow: 0 5px 15px rgba(37, 99, 235, 0.2);
     }
+    .chip i { font-size: 1.1rem; }
 
-    .property-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-        gap: 32px;
-        margin-bottom: 100px;
-    }
-
-    .property-card {
-        background: white;
-        border-radius: 32px;
-        overflow: hidden;
-        border: 1px solid var(--slate-100);
-        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        text-decoration: none;
-        color: inherit;
-    }
-
-    .property-card:hover {
-        transform: translateY(-8px);
-        box-shadow: var(--shadow-xl);
-        border-color: var(--primary-100);
-    }
-
-    .img-wrapper { 
-        position: relative; 
-        overflow: hidden; 
-        aspect-ratio: 16/10;
-        background: var(--slate-100);
-    }
-    
-    .img-wrapper img { 
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); 
-    }
-
-    .property-card:hover .img-wrapper img { transform: scale(1.05); }
-
-    .property-badges {
-        position: absolute;
-        top: 20px;
-        left: 20px;
+    /* Floating Filter Button */
+    .filter-fab {
+        position: fixed;
+        bottom: 90px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--app-primary);
+        color: white;
+        padding: 0 28px;
+        height: 54px;
+        border-radius: 50px;
         display: flex;
+        align-items: center;
+        justify-content: center;
         gap: 10px;
-    }
-
-    .badge-tag {
-        padding: 6px 14px;
-        border-radius: 99px;
-        font-size: 0.75rem;
+        box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+        z-index: 900;
+        border: none;
         font-weight: 800;
-        backdrop-filter: blur(12px);
-    }
-
-    .badge-venda {
-        background: rgba(26, 86, 219, 0.9);
-        color: white;
-    }
-
-    .property-content { padding: 32px; }
-
-    .property-price {
-        font-size: 1.75rem;
-        font-weight: 900;
-        color: var(--primary);
-        margin-bottom: 8px;
-        letter-spacing: -0.5px;
-    }
-
-    .property-title {
-        font-size: 1.25rem;
-        font-weight: 800;
-        color: var(--slate-900);
-        margin-bottom: 16px;
-        line-height: 1.3;
-    }
-
-    .property-meta {
-        display: flex;
-        gap: 20px;
-        color: var(--slate-500);
-        font-size: 0.9rem;
-        font-weight: 500;
-        padding-top: 20px;
-        border-top: 1px solid var(--slate-50);
-    }
-
-    .meta-item { display: flex; align-items: center; gap: 8px; }
-
-    /* CTA Banner */
-    .cta-banner {
-        background: linear-gradient(135deg, var(--primary), #4F46E5);
-        border-radius: 40px;
-        padding: 80px 48px;
-        text-align: center;
-        color: white;
-        margin-bottom: 100px;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .cta-banner h2 { 
-        font-size: 2.5rem; 
-        font-weight: 900; 
-        margin-bottom: 16px; 
-        letter-spacing: -1px;
-    }
-
-    .cta-banner p { 
-        font-size: 1.2rem; 
-        opacity: 0.9; 
-        margin-bottom: 40px; 
-        max-width: 600px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-
-    .btn-white {
-        background: white;
-        color: var(--primary);
-        padding: 18px 40px;
-        border-radius: 20px;
-        font-weight: 800;
-        text-decoration: none;
+        cursor: pointer;
+        font-family: 'Outfit', sans-serif;
         font-size: 1rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 12px;
-        transition: all 0.3s;
+        transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .btn-white:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(0,0,0,0.2); }
+    .filter-sheet {
+        position: fixed;
+        bottom: -100%;
+        left: 0;
+        right: 0;
+        height: 85vh;
+        background: white;
+        z-index: 2000;
+        border-radius: 40px 40px 0 0;
+        transition: bottom 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        padding: 40px 30px;
+        overflow-y: auto;
+        box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
+    }
+    .filter-sheet.active { bottom: 0; }
+    
+    .filter-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.4);
+        backdrop-filter: blur(4px);
+        z-index: 1999;
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    .filter-overlay.active { display: block; opacity: 1; }
+
+    .sheet-handle {
+        width: 40px;
+        height: 4px;
+        background: #e0e0e0;
+        border-radius: 2px;
+        margin: -20px auto 20px;
+    }
+
+    /* Pagination Styling */
+    .pagination-container {
+        margin: 3rem 0 8rem;
+        display: flex;
+        justify-content: center;
+    }
+    .pagination {
+        display: flex;
+        gap: 8px;
+        list-style: none;
+        padding: 0;
+    }
+    .pagination li a, .pagination li span {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: white;
+        color: var(--gray-600);
+        text-decoration: none;
+        font-weight: 800;
+        border: 1px solid var(--gray-100);
+        transition: all 0.2s;
+    }
+    .pagination li.active span {
+        background: var(--app-primary);
+        color: white;
+        border-color: var(--app-primary);
+    }
 </style>
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<div class="filter-chips">
+    <button class="chip" onclick="openFilterSheet('price')">
+        <i class="ph-bold ph-bank"></i> Preço
+    </button>
+    <button class="chip" onclick="openFilterSheet('bedrooms')">
+        <i class="ph-bold ph-bed"></i> Dormitórios
+    </button>
+    <button class="chip" onclick="openFilterSheet('location')">
+        <i class="ph-bold ph-map-pin"></i> Cidade
+    </button>
+    <button class="chip active" onclick="openFilterSheet('all')">
+        <i class="ph-bold ph-sliders-horizontal"></i> Filtros
+    </button>
+</div>
 
-    <section class="page-hero animate-fade-in">
-        <div class="badge-verified" style="background: var(--primary-50); color: var(--primary); margin-bottom: 24px;">
-            <i data-lucide="home" style="width:16px;height:16px"></i>
-            Imóveis para Compra
-        </div>
-        <h1>Compre o seu <span style="color: var(--primary)">lar de sonho</span><br>em Angola.</h1>
-        <p>Encontre apartamentos, vivendas e terrenos verificados nas melhores localizações de Angola, com total segurança e transparência.</p>
-    </section>
+<div style="margin-bottom: 30px;">
+    <h2 style="font-family: 'Outfit'; font-size: 2rem; font-weight: 900; letter-spacing: -1px; color: var(--gray-800); margin-bottom: 4px;">Imóveis à Venda</h2>
+    <p style="color: var(--gray-500); font-weight: 500;">Oportunidades de investimento verificadas</p>
+</div>
 
-    <!-- Filters -->
-    <form action="/comprar" method="get" class="filters-bar animate-fade-in">
+<div class="app-grid">
+    <?php foreach ($properties as $property): ?>
+        <?php 
+            $images = !empty($property['images']) ? json_decode($property['images'], true) : [];
+            $firstImage = !empty($images) ? $images[0] : '/img/placeholder-house.jpg';
+        ?>
+        <a href="/property/<?= $property['id'] ?>" class="property-card">
+            <div class="property-card-img">
+                <img src="<?= $firstImage ?>" alt="<?= esc($property['title']) ?>" loading="lazy">
+                <?php if ($property['is_verified']): ?>
+                    <div class="property-card-badge" style="background: #ecfdf5; color: #059669; border: none; font-weight: 800;">
+                        <i class="ph-fill ph-shield-check"></i> Verificado
+                    </div>
+                <?php endif; ?>
+                <button class="btn-card-fav" onclick="event.preventDefault(); toggleFavorite(<?= $property['id'] ?>)">
+                    <i class="ph-bold ph-heart"></i>
+                </button>
+            </div>
+            <div class="property-card-content">
+                <div class="property-card-price" style="font-family: 'Outfit'; font-weight: 900; font-size: 1.4rem; color: var(--app-primary);">
+                    <?= number_format($property['price'], 0, ',', '.') ?> <small style="font-size: 0.8rem; color: var(--gray-400); font-weight: 700;">KZ</small>
+                </div>
+                <h3 class="property-card-title"><?= esc($property['title']) ?></h3>
+                <div class="property-card-location">
+                    <i class="ph-bold ph-map-pin"></i> <?= esc($property['neighborhood']) ?>
+                </div>
+                <div class="property-card-meta">
+                    <div class="meta-pill"><i class="ph-duotone ph-bed"></i> T<?= $property['bedrooms'] ?></div>
+                    <div class="meta-pill"><i class="ph-duotone ph-bathtub"></i> <?= $property['bathrooms'] ?></div>
+                    <div class="meta-pill"><i class="ph-duotone ph-ruler"></i> <?= $property['area'] ?? 150 ?>m²</div>
+                </div>
+            </div>
+        </a>
+    <?php endforeach; ?>
+</div>
+
+<!-- Pagination Links -->
+<?php if (isset($pager)): ?>
+    <div style="margin-top: 40px;">
+        <?= $pager->links('default', 'premium') ?>
+    </div>
+<?php endif; ?>
+
+<button class="filter-fab" id="openFilters"><i class="ph-bold ph-sliders-horizontal"></i> O que procura?</button>
+
+<div class="filter-overlay" id="filterOverlay"></div>
+<div class="filter-sheet" id="filterSheet">
+    <div class="sheet-handle"></div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
+        <h2 style="font-family: 'Outfit'; font-size: 1.8rem; font-weight: 900; color: var(--gray-800);">Busca Avançada</h2>
+        <button id="closeFilters" style="background:var(--gray-100); border:none; width:44px; height:44px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center;"><i class="ph-bold ph-x"></i></button>
+    </div>
+    <form action="/comprar" method="GET">
         <div class="filter-group">
-            <i data-lucide="map-pin"></i>
-            <input type="text" name="q" placeholder="Localização, bairro..." value="<?= esc($q ?? '') ?>">
-        </div>
-        <div class="filter-group">
-            <i data-lucide="building-2"></i>
-            <select name="province">
-                <option value="">Província</option>
-                <option value="Luanda" <?= ($province ?? '') == 'Luanda' ? 'selected' : '' ?>>Luanda</option>
-                <option value="Benguela" <?= ($province ?? '') == 'Benguela' ? 'selected' : '' ?>>Benguela</option>
-                <option value="Huíla" <?= ($province ?? '') == 'Huíla' ? 'selected' : '' ?>>Huíla</option>
-            </select>
-        </div>
-        <div class="filter-group">
-            <i data-lucide="bed-double"></i>
-            <select name="bedrooms">
-                <option value="">Quartos</option>
-                <option value="1">T1</option>
-                <option value="2">T2</option>
-                <option value="3">T3</option>
-                <option value="4">T4+</option>
-            </select>
-        </div>
-        <div class="filter-group" style="min-width: 300px;">
-            <i data-lucide="tag"></i>
-            <div style="display: flex; gap: 8px; flex: 1;">
-                <input type="number" name="min_price" value="<?= esc($minPrice ?? '') ?>" placeholder="Preço Min" style="padding: 16px 12px;">
-                <input type="number" name="max_price" value="<?= esc($maxPrice ?? '') ?>" placeholder="Preço Max" style="padding: 16px 12px;">
+            <label>Onde deseja investir?</label>
+            <div style="position: relative;">
+                <i class="ph-bold ph-map-pin" style="position: absolute; left: 20px; top: 18px; color: var(--app-primary); font-size: 1.2rem; z-index: 10;"></i>
+                <input type="text" name="q" value="<?= esc($q) ?>" placeholder="Bairro ou Município..." class="input-modern" style="padding-left: 55px;">
             </div>
         </div>
-        <button type="submit" class="btn-primary" style="padding: 0 32px; height: 60px; border-radius: 20px;">
-            Pesquisar
+
+        <div class="filter-group">
+            <label>Faixa de Preço (KZ)</label>
+            <div style="display:flex; gap:12px;">
+                <input type="number" name="min_price" value="<?= esc($minPrice) ?>" placeholder="Mínimo" class="input-modern" style="flex:1;">
+                <input type="number" name="max_price" value="<?= esc($maxPrice) ?>" placeholder="Máximo" class="input-modern" style="flex:1;">
+            </div>
+        </div>
+
+        <button type="submit" class="btn-primary" style="margin-top:30px;">
+            Filtrar Oportunidades <i class="ph-bold ph-magnifying-glass"></i>
         </button>
+        <a href="/comprar" style="display: block; text-align: center; width:100%; margin-top:15px; color:var(--gray-400); font-weight:700; text-decoration: none; font-size: 0.9rem;">Limpar tudo</a>
     </form>
+</div>
 
-    <!-- Stats -->
-    <div class="stats-row animate-fade-in">
-        <div class="stat-card">
-            <div class="stat-number"><?= count($properties) ?>+</div>
-            <div class="stat-label">Disponíveis</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number"><?= count(array_filter($properties, fn($p) => $p['is_verified'] ?? false)) ?>+</div>
-            <div class="stat-label">Verificados</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">18</div>
-            <div class="stat-label">Províncias</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">100%</div>
-            <div class="stat-label">Seguro</div>
-        </div>
-    </div>
-
-    <!-- Property Listing -->
-    <div class="section-header">
-        <h2>Imóveis à Venda</h2>
-        <span class="count"><?= count($properties) ?> resultado<?= count($properties) !== 1 ? 's' : '' ?> encontrado<?= count($properties) !== 1 ? 's' : '' ?></span>
-    </div>
-
-    <section class="property-grid animate-fade-in">
-        <?php if (empty($properties)): ?>
-            <div class="empty-state">
-                <i data-lucide="search-x"></i>
-                <h3 style="font-size: 1.5rem; color: var(--slate-900); margin-bottom: 8px;">Nenhum imóvel encontrado</h3>
-                <p>Tente ajustar os filtros acima para encontrar o que procura.</p>
-            </div>
-        <?php else: ?>
-            <?php foreach ($properties as $property): ?>
-                <?php 
-                    $imgUrls = !empty($property['images']) ? json_decode($property['images']) : [];
-                    $firstImg = !empty($imgUrls) ? $imgUrls[0] : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1200';
-                ?>
-                <a href="/property/<?= $property['id'] ?>" class="property-card">
-                    <div class="img-wrapper">
-                        <img src="<?= $firstImg ?>" alt="<?= esc($property['title']) ?>" onerror="this.src='https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&q=80&w=1200'">
-                        <div class="property-badges">
-                            <span class="badge-tag badge-venda">Venda</span>
-                            <?php if (($property['is_verified'] ?? false) || ($property['owner_id'] ?? 0) > 0): ?>
-                                <span class="badge-verified" style="background: white; color: var(--secondary);"><i data-lucide="shield-check" style="width: 14px"></i> Verificado</span>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <div class="property-content">
-                        <div class="property-price"><?= number_format($property['price'], 0, ',', '.') ?> KZ</div>
-                        <h3 class="property-title"><?= esc($property['title']) ?></h3>
-                        <div class="property-meta">
-                            <div class="meta-item"><i data-lucide="bed"></i> <?= $property['bedrooms'] ?> Quartos</div>
-                            <div class="meta-item"><i data-lucide="bath"></i> <?= $property['bathrooms'] ?> Banhos</div>
-                            <div class="meta-item"><i data-lucide="map-pin"></i> <?= esc($property['neighborhood']) ?></div>
-                        </div>
-                    </div>
-                </a>
-            <?php endforeach; ?>
-        <?php endif; ?>
-    </section>
-
-    <!-- CTA -->
-    <div class="cta-banner animate-fade-in">
-        <h2>Tem um imóvel para vender?</h2>
-        <p>Publique gratuitamente no CasaSegura e alcance milhares de compradores verificados em Angola.</p>
-        <a href="/signup" class="btn-white">Publicar Imóvel Agora <i data-lucide="arrow-right"></i></a>
-    </div>
-
+<script>
+    const sheet = document.getElementById('filterSheet');
+    const overlay = document.getElementById('filterOverlay');
+    function toggleSheet(show) {
+        if (show) { sheet.classList.add('active'); overlay.classList.add('active'); document.body.style.overflow = 'hidden'; } 
+        else { sheet.classList.remove('active'); overlay.classList.remove('active'); document.body.style.overflow = ''; }
+    }
+    document.getElementById('openFilters').onclick = () => toggleSheet(true);
+    document.getElementById('closeFilters').onclick = overlay.onclick = () => toggleSheet(false);
+</script>
 <?= $this->endSection() ?>

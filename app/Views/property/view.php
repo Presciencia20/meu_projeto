@@ -1,303 +1,431 @@
-<?= $this->extend('templates/main') ?>
+<?php $this->extend('templates/main'); ?>
 
-<?= $this->section('title') ?><?= $property['title'] ?><?= $this->endSection() ?>
+<?php $this->section('title'); ?><?= esc($property['title']) ?> - CasaSegura<?php $this->endSection(); ?>
 
-<?= $this->section('styles') ?>
+<?php $this->section('styles'); ?>
 <style>
-    .property-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        margin-bottom: 40px;
+    /* Premium Header */
+    .p-header-v2 {
+        margin-bottom: 2rem;
+        padding: 0 1rem;
     }
 
-    .property-title-group h1 {
-        font-size: 2.8rem;
+    .p-badge-verified {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: #ecfdf5;
+        color: #059669;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
         font-weight: 800;
-        color: var(--slate-900);
-        margin-bottom: 12px;
-        letter-spacing: -1.5px;
-        line-height: 1.1;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        border: 1px solid #10b98120;
+        margin-bottom: 1rem;
     }
 
-    .property-location {
+    .p-title-v2 {
+        font-family: 'Outfit';
+        font-weight: 900;
+        font-size: 2.25rem;
+        color: var(--gray-800);
+        letter-spacing: -1px;
+        line-height: 1.1;
+        margin-bottom: 0.5rem;
+    }
+
+    .p-location-v2 {
         display: flex;
         align-items: center;
-        gap: 10px;
-        color: var(--slate-500);
-        font-weight: 500;
-        font-size: 1.1rem;
+        gap: 0.5rem;
+        color: var(--gray-500);
+        font-weight: 600;
     }
 
-    /* Premium Gallery */
-    .gallery-container {
-        display: grid;
-        grid-template-columns: 2.2fr 1fr;
-        gap: 20px;
-        height: 550px;
-        margin-bottom: 60px;
-        border-radius: 40px;
-        overflow: hidden;
-    }
-
-    .gallery-item {
+    /* Modern Gallery System */
+    .p-gallery-shell {
+        margin: 0 -1rem 2.5rem;
         position: relative;
-        overflow: hidden;
-        cursor: pointer;
     }
 
-    .gallery-item img {
+    .p-main-img-wrap {
+        height: 450px;
         width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .gallery-item:hover img {
-        transform: scale(1.05);
-    }
-
-    .side-gallery {
-        display: grid;
-        grid-template-rows: 1fr 1fr;
-        gap: 20px;
-    }
-
-    /* Layout Grid */
-    .detail-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 80px;
+        overflow: hidden;
+        position: relative;
     }
 
     @media (min-width: 992px) {
-        .detail-grid { grid-template-columns: 1.6fr 1fr; }
+        .p-gallery-shell { margin: 0 0 3rem; border-radius: 32px; overflow: hidden; }
+        .p-main-img-wrap { height: 550px; }
     }
 
-    .p-section {
-        margin-bottom: 60px;
+    .p-main-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
 
-    .p-section h2 {
-        font-size: 1.75rem;
-        font-weight: 800;
-        margin-bottom: 32px;
-        letter-spacing: -0.5px;
-    }
-
-    .amenities {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 24px;
-    }
-
-    .amenity-item {
+    /* Floating Detail Card (Pricing) */
+    .p-price-card {
+        background: white;
+        padding: 2rem;
+        border-radius: 28px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.06);
+        border: 1px solid var(--gray-100);
         display: flex;
+        justify-content: space-between;
         align-items: center;
-        gap: 16px;
-        padding: 24px;
-        background: white;
-        border-radius: 24px;
-        border: 1px solid var(--slate-100);
-        transition: all 0.3s;
+        margin-top: -3rem;
+        position: relative;
+        z-index: 10;
+        margin-left: 1rem;
+        margin-right: 1rem;
     }
 
-    .amenity-item:hover {
-        border-color: var(--primary);
-        box-shadow: var(--shadow-md);
+    @media (min-width: 992px) {
+        .p-price-card { margin-top: -4rem; padding: 2.5rem 3rem; }
     }
 
-    .amenity-item i {
-        width: 24px !important;
-        height: 24px !important;
-        color: var(--primary);
-    }
-
-    /* Booking Card */
-    .booking-card {
-        background: white;
-        padding: 48px;
-        border-radius: 40px;
-        border: 1px solid var(--slate-100);
-        box-shadow: 0 40px 100px rgba(0, 0, 0, 0.04);
-        position: sticky;
-        top: 120px;
-    }
-
-    .price-box {
-        margin-bottom: 40px;
-    }
-
-    .price-main {
-        font-size: 3rem;
+    .p-price-value {
+        font-family: 'Outfit';
         font-weight: 900;
-        color: var(--primary);
+        font-size: 2.5rem;
+        color: var(--app-primary);
         letter-spacing: -1px;
     }
 
-    .booking-feature {
+    .p-price-value span {
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--gray-500);
+        margin-left: 4px;
+        text-transform: uppercase;
+    }
+
+    /* Info Grids */
+    .p-feature-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+        margin: 2.5rem 1rem;
+    }
+
+    .p-feature-box {
+        background: #f8fafc;
+        padding: 1.5rem 1rem;
+        border-radius: 24px;
+        text-align: center;
+        border: 1px solid var(--gray-100);
+    }
+
+    .p-feature-box i {
+        font-size: 1.5rem;
+        color: var(--app-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .p-feature-box div {
+        font-weight: 900;
+        font-size: 1.1rem;
+        color: var(--gray-800);
+    }
+
+    .p-feature-box span {
+        font-size: 0.65rem;
+        font-weight: 800;
+        color: var(--gray-400);
+        text-transform: uppercase;
+    }
+
+    /* Description Section */
+    .p-desc-section {
+        padding: 0 1.25rem;
+        margin-bottom: 3rem;
+    }
+
+    .p-section-title {
+        font-family: 'Outfit';
+        font-weight: 900;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: var(--gray-800);
+    }
+
+    .p-desc-text {
+        color: var(--gray-600);
+        line-height: 1.8;
+        font-size: 1.05rem;
+        font-weight: 500;
+    }
+
+    /* Owner Card Premium */
+    .p-owner-card {
+        margin: 0 1rem 100px;
+        background: var(--app-primary-50);
+        border: 1px solid var(--app-primary-50);
+        padding: 2rem;
+        border-radius: 32px;
         display: flex;
-        gap: 16px;
-        margin-top: 40px;
-        padding-top: 40px;
-        border-top: 1px solid var(--slate-100);
+        align-items: center;
+        gap: 1.5rem;
     }
 
-    .booking-feature-icon {
-        color: var(--primary);
-        flex-shrink: 0;
+    .avatar-owner-large {
+        width: 72px;
+        height: 72px;
+        background: var(--app-primary);
+        color: white;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Outfit';
+        font-weight: 900;
+        font-size: 1.8rem;
+        box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2);
     }
 
-    .booking-feature p {
-        font-size: 0.9rem;
-        color: var(--slate-500);
-        line-height: 1.7;
+    /* Sticky Bar V2 */
+    .sticky-action-bar {
+        position: fixed;
+        bottom: 100px;
+        left: 1rem;
+        right: 1rem;
+        background: white;
+        padding: 1.25rem 1.5rem;
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+        z-index: 1000;
+        border: 1px solid var(--gray-100);
+        animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @media (max-width: 480px) {
+        .sticky-action-bar { bottom: 90px; }
     }
 </style>
-<?= $this->endSection() ?>
+<?php $this->endSection(); ?>
 
-<?= $this->section('content') ?>
-    <div class="property-header animate-fade-in">
-        <div class="property-title-group">
-            <div class="badge-verified" style="margin-bottom: 16px;"><i data-lucide="shield-check" style="width: 14px"></i> Imóvel Verificado</div>
-            <h1><?= $property['title'] ?></h1>
-            <div class="property-location">
-                <i data-lucide="map-pin" style="width: 20px; color: var(--primary)"></i>
-                <?= $property['neighborhood'] ?>, <?= $property['municipality'] ?>, <?= $property['province'] ?>
+<?php $this->section('content'); ?>
+<div class="animate-fade-in">
+    <!-- Header Info -->
+    <header class="p-header-v2">
+        <?php if ($property['is_verified']): ?>
+            <div class="p-badge-verified">
+                <i class="ph-fill ph-shield-check"></i> Imóvel Verificado
+            </div>
+        <?php endif; ?>
+        <h1 class="p-title-v2"><?= esc($property['title']) ?></h1>
+        <div class="p-location-v2">
+            <i class="ph-bold ph-map-pin" style="color: var(--app-primary);"></i>
+            <?= esc($property['neighborhood']) ?>, <?= esc($property['municipality']) ?>
+        </div>
+    </header>
+
+    <!-- Main Gallery -->
+    <section class="p-gallery-shell">
+        <?php 
+            $images = !empty($property['images']) ? json_decode($property['images']) : [];
+            $mainImg = !empty($images) ? $images[0] : '/img/placeholder-house.jpg';
+        ?>
+        <div class="p-main-img-wrap">
+            <img src="<?= $mainImg ?>" class="p-main-img" alt="<?= esc($property['title']) ?>">
+        </div>
+    </section>
+
+    <!-- Price Card -->
+    <div class="p-price-card">
+        <div>
+            <div style="font-size: 0.75rem; font-weight: 800; color: var(--app-primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+                <i class="ph-fill ph-user-circle"></i> <?= esc($owner['full_name']) ?>
+            </div>
+            <div class="p-price-value">
+                <?= number_format($property['price'], 0, ',', '.') ?> <span>KZ/Mês</span>
             </div>
         </div>
-        <div style="display: flex; gap: 16px;">
-            <button class="btn-secondary" style="border-radius: 16px; width: 56px; height: 56px; padding: 0;"><i data-lucide="share-2"></i></button>
-            <button class="btn-secondary" style="border-radius: 16px; width: 56px; height: 56px; padding: 0;"><i data-lucide="heart"></i></button>
-        </div>
+        <button class="btn-circle" style="width: 52px; height: 52px; background: #fff1f2; color: #e11d48; border: none;">
+            <i class="ph-bold ph-heart" style="font-size: 1.5rem;"></i>
+        </button>
     </div>
 
-    <?php 
-        $images = !empty($property['images']) ? json_decode($property['images']) : [];
-        $mainImg = !empty($images) ? $images[0] : 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=2070';
-        $sideImg1 = isset($images[1]) ? $images[1] : 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=2070';
-        $sideImg2 = isset($images[2]) ? $images[2] : 'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&q=80&w=2070';
-    ?>
-    <section class="gallery-container animate-fade-in">
-        <div class="gallery-item main-gallery">
-            <img src="<?= $mainImg ?>">
+    <!-- Feature Stats -->
+    <section class="p-feature-grid">
+        <div class="p-feature-box">
+            <i class="ph-duotone ph-bed"></i>
+            <div>T<?= $property['bedrooms'] ?></div>
+            <span>Quartos</span>
         </div>
-        <div class="side-gallery">
-            <div class="gallery-item">
-                <img src="<?= $sideImg1 ?>">
+        <div class="p-feature-box">
+            <i class="ph-duotone ph-bathtub"></i>
+            <div><?= $property['bathrooms'] ?></div>
+            <span>Banheiros</span>
+        </div>
+        <div class="p-feature-box">
+            <i class="ph-duotone ph-ruler"></i>
+            <div><?= $property['area'] ?? 120 ?>m²</div>
+            <span>Área Total</span>
+        </div>
+    </section>
+
+    <!-- Description -->
+    <section class="p-desc-section" style="margin-top: 4rem;">
+        <h2 class="p-section-title">Sobre este imóvel</h2>
+        <div class="p-desc-text">
+            <?= nl2br(esc($property['description'])) ?>
+        </div>
+    </section>
+
+    <!-- Owner Card -->
+    <section class="p-owner-card" style="margin-top: 4rem;">
+        <div class="avatar-owner-large">
+            <?= strtoupper(substr($owner['full_name'], 0, 1)) ?>
+        </div>
+        <div>
+            <div style="font-family: 'Outfit'; font-weight: 800; font-size: 1.15rem; color: var(--gray-800); margin-bottom: 2px;">
+                <?= esc($owner['full_name']) ?>
             </div>
-            <div class="gallery-item">
-                <img src="<?= $sideImg2 ?>">
+            <div style="display: flex; align-items: center; gap: 4px; font-size: 0.8rem; color: #059669; font-weight: 700;">
+                <i class="ph-bold ph-check-circle"></i> Proprietário Confiável
             </div>
         </div>
     </section>
 
-    <div class="detail-grid">
-        <div class="main-content">
-            <div class="p-section">
-                <h2>Sobre este imóvel</h2>
-                <p style="color: var(--slate-600); line-height: 1.8; font-size: 1.1rem;"><?= $property['description'] ?></p>
+    <!-- Floating Action Bar V3 (Native App Style) -->
+    <div class="sticky-action-bar">
+        <div class="action-bar-inner">
+            <div class="action-price-info">
+                <span class="action-label" style="color: var(--app-primary);"><?= esc($owner['full_name']) ?></span>
+                <div class="action-price-value"><?= number_format($property['price'], 0, ',', '.') ?> <small>KZ/Mês</small></div>
             </div>
+            
+            <div class="action-buttons-group">
+                <a href="https://wa.me/244<?= preg_replace('/\D/', '', $owner['phone'] ?? '') ?>" class="action-btn-secondary" title="WhatsApp">
+                    <i class="ph-bold ph-whatsapp-logo"></i>
+                </a>
+                
+                <a href="/chat/start/<?= $property['id'] ?>" class="action-btn-secondary" title="Mensagem">
+                    <i class="ph-bold ph-chat-centered-dots"></i>
+                </a>
 
-            <div class="p-section">
-                <h2>Comodidades</h2>
-                <div class="amenities">
-                    <div class="amenity-item">
-                        <i data-lucide="bed"></i>
-                        <div>
-                            <div style="font-weight: 800; font-size: 1.1rem;"><?= $property['bedrooms'] ?></div>
-                            <div style="font-size: 0.8rem; color: var(--slate-500); font-weight: 500;">Quartos</div>
-                        </div>
-                    </div>
-                    <div class="amenity-item">
-                        <i data-lucide="bath"></i>
-                        <div>
-                            <div style="font-weight: 800; font-size: 1.1rem;"><?= $property['bathrooms'] ?></div>
-                            <div style="font-size: 0.8rem; color: var(--slate-500); font-weight: 500;">Casas de Banho</div>
-                        </div>
-                    </div>
-                    <div class="amenity-item">
-                        <i data-lucide="zap"></i>
-                        <div>
-                            <div style="font-weight: 800; font-size: 1.1rem;">Sim</div>
-                            <div style="font-size: 0.8rem; color: var(--slate-500); font-weight: 500;">Água e Luz</div>
-                        </div>
-                    </div>
-                </div>
+                <a href="/property/pay/<?= $property['id'] ?>" class="action-btn-primary">
+                    <i class="ph-bold ph-credit-card"></i>
+                    <span>Pagar</span>
+                </a>
             </div>
-
-            <div class="p-section" style="background: var(--white); padding: 48px; border-radius: 40px; border: 1px solid var(--slate-100); display: flex; align-items: center; justify-content: space-between; box-shadow: var(--shadow-sm);">
-                <div style="display: flex; gap: 24px; align-items: center;">
-                    <div style="width: 72px; height: 72px; background: <?= $badge['color'] ?>20; color: <?= $badge['color'] ?>; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.5rem;">
-                        <?= strtoupper(substr($owner['full_name'], 0, 1)) ?>
-                    </div>
-                    <div>
-                        <div style="font-weight: 800; font-size: 1.25rem; color: var(--slate-900);"><?= esc($owner['full_name']) ?></div>
-                        <div style="color: <?= $badge['color'] ?>; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                            <i data-lucide="<?= strpos($badge['icon'], 'shield') !== false ? 'shield-check' : 'check-circle' ?>" style="width: 14px;"></i> <?= esc($badge['label']) ?>
-                            <?php if ($avgRating > 0): ?>
-                                <span style="margin-left: 8px; color: #fbbf24; display: flex; align-items: center; gap: 4px;">
-                                    <i data-lucide="star" style="width: 14px; fill: #fbbf24;"></i> <?= number_format($avgRating, 1) ?>
-                                </span>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-                <a href="/user/profile/<?= $owner['id'] ?>" class="btn-secondary" style="font-weight: 700; border-radius: 16px; padding: 14px 24px; text-decoration: none;">Ver Perfil</a>
-            </div>
-
-            <?php if (!empty($reviews)): ?>
-                <div class="p-section" style="margin-top: 60px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
-                        <h2 style="margin-bottom: 0;">O que dizem os inquilinos</h2>
-                        <div style="color: var(--slate-500); font-weight: 600;"><?= count($reviews) ?> avaliações</div>
-                    </div>
-                    
-                    <div style="display: grid; gap: 24px;">
-                        <?php foreach ($reviews as $rev): ?>
-                            <div style="background: var(--slate-50); padding: 32px; border-radius: 32px; border: 1px solid var(--slate-100);">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
-                                    <div style="font-weight: 800;"><?= esc($rev['reviewer_name']) ?></div>
-                                    <div style="color: #fbbf24; display: flex; gap: 2px;">
-                                        <?php for($i=1; $i<=5; $i++): ?>
-                                            <i data-lucide="star" style="width: 14px; <?= $i <= $rev['rating'] ? 'fill: #fbbf24;' : 'color: var(--slate-200);' ?>"></i>
-                                        <?php endfor; ?>
-                                    </div>
-                                </div>
-                                <p style="color: var(--slate-600); line-height: 1.6;"><?= esc($rev['comment']) ?></p>
-                                <div style="margin-top: 16px; font-size: 0.8rem; color: var(--slate-400);"><?= date('d M, Y', strtotime($rev['created_at'])) ?></div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            <?php endif; ?>
         </div>
-
-        <aside>
-            <div class="booking-card">
-                <div class="price-box">
-                    <div style="color: var(--slate-500); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 8px;">Preço por mês</div>
-                    <div class="price-main"><?= number_format($property['price'], 0, ',', '.') ?> <span style="font-size: 1.25rem; color: var(--slate-400)">KZ</span></div>
-                </div>
-
-                <div style="display: flex; flex-direction: column; gap: 16px;">
-                    <a href="/checkout/<?= $property['id'] ?>" class="btn-primary" style="text-align: center; font-size: 1.1rem; padding: 20px;">Arrendar com Segurança</a>
-                    <a href="/chat/start/<?= $property['id'] ?>" class="btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 12px; padding: 18px; border-radius: 16px; font-weight: 700; text-decoration: none;">
-                        <i data-lucide="message-circle" style="width: 20px;"></i> Falar com Proprietário
-                    </a>
-                </div>
-
-                <div class="booking-feature">
-                    <div class="booking-feature-icon"><i data-lucide="shield-check"></i></div>
-                    <div>
-                        <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 4px;">Arrendamento Protegido</h4>
-                        <p>O seu pagamento é retido pela nossa plataforma até que confirme o estado do imóvel durante a entrada.</p>
-                    </div>
-                </div>
-            </div>
-        </aside>
     </div>
+</div>
 
-    <!-- Final spacer -->
-    <div style="height: 100px;"></div>
-<?= $this->endSection() ?>
+<style>
+    .sticky-action-bar {
+        position: fixed;
+        bottom: 100px;
+        left: 0;
+        right: 0;
+        padding: 0 1rem;
+        z-index: 1000;
+        pointer-events: none; /* Allow interaction with content behind if needed, but inner has pointer-events auto */
+    }
+
+    .action-bar-inner {
+        max-width: 500px;
+        margin: 0 auto;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        padding: 0.75rem 1rem;
+        border-radius: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        pointer-events: auto;
+        animation: slideUpAction 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideUpAction {
+        from { opacity: 0; transform: translateY(40px) scale(0.95); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .action-price-info {
+        display: flex;
+        flex-direction: column;
+        padding-left: 0.5rem;
+    }
+
+    .action-label {
+        font-size: 0.65rem;
+        font-weight: 800;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .action-price-value {
+        font-family: 'Outfit';
+        font-weight: 900;
+        font-size: 1.2rem;
+        color: var(--gray-800);
+    }
+
+    .action-price-value small { font-size: 0.7rem; opacity: 0.5; }
+
+    .action-buttons-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .action-btn-secondary {
+        width: 48px;
+        height: 48px;
+        background: var(--gray-100);
+        color: var(--gray-600);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 20px;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 1.4rem;
+    }
+
+    .action-btn-secondary:hover { background: var(--gray-200); color: var(--gray-800); transform: translateY(-2px); }
+
+    .action-btn-primary {
+        background: var(--app-primary);
+        color: white;
+        padding: 0 1.5rem;
+        height: 48px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        font-family: 'Outfit';
+        font-weight: 800;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+        box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+    }
+
+    .action-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(37, 99, 235, 0.35);
+    }
+
+    @media (max-width: 400px) {
+        .action-price-info { display: none; }
+        .action-bar-inner { justify-content: center; width: 100%; max-width: 100%; }
+        .action-buttons-group { width: 100%; justify-content: center; }
+        .action-btn-primary { flex: 1; justify-content: center; }
+    }
+</style>
+<?php $this->endSection(); ?>
+

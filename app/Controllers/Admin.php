@@ -5,248 +5,460 @@ namespace App\Controllers;
 use App\Models\UserModel;
 use App\Models\PropertyModel;
 use App\Models\VerificacaoBiModel;
-use CodeIgniter\Controller;
+use App\Models\ReportModel;
+use App\Models\RentalRequestModel;
+use App\Models\VisitModel;
+use App\Models\LoginModel;
+use App\Models\PropertyViewModel;
+use CodeIgniter\HTTP\RedirectResponse;
 
 class Admin extends BaseController
 {
-    protected UserModel         $userModel;
-    protected PropertyModel    $propModel;
+    protected UserModel $userModel;
+    protected PropertyModel $propertyModel;
     protected VerificacaoBiModel $biModel;
+    protected ReportModel $reportModel;
+    protected RentalRequestModel $rentalModel;
+    protected VisitModel $visitModel;
+    protected LoginModel $loginModel;
+    protected PropertyViewModel $propertyViewModel;
 
-    public function initController(
-        \CodeIgniter\HTTP\RequestInterface $request,
-        \CodeIgniter\HTTP\ResponseInterface $response,
-        \Psr\Log\LoggerInterface $logger
-    ): void {
+    public function initController($request, $response, $logger)
+    {
         parent::initController($request, $response, $logger);
-        
-        $this->userModel = new UserModel();
-        $this->propModel = new PropertyModel();
-        $this->biModel   = new VerificacaoBiModel();
+        $this->userModel     = new UserModel();
+        $this->propertyModel = new PropertyModel();
+        $this->biModel       = new VerificacaoBiModel();
+        $this->reportModel   = new ReportModel();
+        $this->rentalModel   = new RentalRequestModel();
+        $this->visitModel    = new VisitModel();
+        $this->loginModel    = new LoginModel();
+        $this->propertyViewModel = new PropertyViewModel();
     }
 
-    public function dashboard()
+    /**
+     * Ensure the current user is an admin.
+     */
+    private function ensureAdmin(): void
     {
-        if (! session()->get('isLoggedIn') || session()->get('user_type') !== 'Admin') {
-            // No MVP pode-se ser flexível, mas idealmente proteger
-            // return redirect()->to('/login');
+        $session = session();
+        
+        // 1. Must be logged in
+        if (!$session->get('isLoggedIn')) {
+            header('Location: ' . base_url('login'));
+            exit;
         }
 
-        $data['pendingUsers']      = $this->userModel->where('is_verified_user', false)
-                                                     ->where('bi_status', 'pendente')
-                                                     ->findAll();
+        // 2. Must HAVE admin master permission (is_admin flag)
+        if (!$session->get('is_admin')) {
+            header('Location: ' . base_url('/'));
+            exit;
+        }
+
+        // 3. Must be in Admin MODE (active_role)
+        if ($session->get('active_role') !== 'admin') {
+            header('Location: ' . base_url('/'));
+            exit;
+        }
+    }
+
+    /**
+     * Granular permission check.
+     */
+    private function checkPermission(string $module): void
+    {
+        $this->ensureAdmin();
+        $role = session()->get('user_type'); // We still use user_type for granularity
         
-        $data['pendingProperties'] = $this->propModel->where('is_verified', false)->findAll();
+        if ($role === 'Super Admin' || $role === 'Admin') return;
+
+        $permissions = [
+            'Moderador'  => ['dashboard', 'properties', 'reports', 'messages', 'map'],
+            'Financeiro' => ['dashboard', 'payments', 'plans', 'stats'],
+            'Admin'      => ['dashboard', 'users', 'properties', 'verifications', 'payments', 'plans', 'reports' , 'stats', 'messages', 'map', 'settings', 'notifications']
+        ];
+
+        if (!isset($permissions[$role]) || !in_array($module, $permissions[$role])) {
+            header('Location: ' . base_url('admin/dashboard'));
+            exit;
+        }
+    }
+
+    // 1. DASHBOARD
+    public function dashboard()
+    {
+        $this->checkPermission('dashboard');
+
+        $data = [
+            'totalUsers'         => $this->userModel->countAll(),
+            'totalProperties'    => $this->propertyModel->countAll(),
+            'activeProperties'   => $this->propertyModel->where('status', 'ativo')->countAllResults(),
+            'pendingKYC'         => $this->biModel->where('resultado', 'pendente')->countAllResults(),
+            'pendingProps'       => $this->propertyModel->where('status', 'pendente')->countAllResults(),
+            
+            // Dados para Analytics Simplificado no Painel
+            'totalVisits'        => $this->visitModel->countAllResults(),
+            'totalLogins'        => $this->loginModel->countAllResults(),
+            'totalPropertyViews' => $this->propertyViewModel->countAllResults(),
+            
+            // Tendências (Últimos 7 dias)
+            'dailyVisits'        => $this->visitModel->select("DATE(created_at) as date, COUNT(*) as total")
+                                    ->groupBy("date")
+                                    ->orderBy("date", "DESC")
+                                    ->limit(7)
+                                    ->findAll(),
+            
+            // Dados Adicionais exigidos pela View (Tabs legadas ou resumos)
+            'topProperties'      => $this->propertyViewModel->select('property_views.property_id, properties.title, COUNT(property_views.id) as total')
+                                    ->join('properties', 'properties.id = property_views.property_id')
+                                    ->groupBy('property_views.property_id, properties.title')
+                                    ->orderBy('total', 'DESC')
+                                    ->limit(5)
+                                    ->findAll(),
+            'allProperties'      => $this->propertyModel->orderBy('created_at', 'DESC')->limit(10)->findAll(),
+            'recentReports'      => $this->reportModel->select('reports.*, properties.title')
+                                    ->join('properties', 'properties.id = reports.property_id')
+                                    ->orderBy('reports.created_at', 'DESC')
+                                    ->limit(5)
+                                    ->findAll(),
+            'allUsers'           => $this->userModel->orderBy('created_at', 'DESC')->limit(10)->findAll(),
+        ];
 
         return view('admin/dashboard', $data);
     }
 
-    // =========================================================================
-    // VERIFICAÇÕES DE BI
-    // =========================================================================
-
-    public function verificationQueue()
+    public function analytics()
     {
-        // Trazer utilizadores com BI pendente + dados da tabela de submissão
-        $data['submissions'] = $this->biModel->select('verificacoes_bi.*, users.full_name, users.phone')
-                                             ->join('users', 'users.id = verificacoes_bi.user_id')
-                                             ->where('verificacoes_bi.resultado', 'pendente')
-                                             ->findAll();
+        $this->checkPermission('stats');
+        
+        $data = [
+            'registrationTrend' => $this->userModel->select("DATE(created_at) as date, COUNT(*) as total")
+                                        ->groupBy("date")
+                                        ->orderBy("date", "ASC")
+                                        ->limit(30)
+                                        ->findAll(),
+            'propertyStatusDist' => $this->propertyModel->select("status, COUNT(*) as total")
+                                         ->groupBy("status")
+                                         ->findAll(),
+            'totalRevenue'      => 500000, // Placeholder for financial integration
+        ];
 
-        return view('admin/verifications', $data);
+        return view('admin/analytics', $data);
     }
 
-    public function reviewVerification($id)
+    public function dashboardReports()
     {
-        $submission = $this->biModel->select('verificacoes_bi.*, users.full_name, users.phone, users.bi_number')
-                                    ->join('users', 'users.id = verificacoes_bi.user_id')
-                                    ->find($id);
-
-        if (! $submission) {
-            return redirect()->to('/admin/verifications')->with('error', 'Submissão não encontrada.');
-        }
-
-        return view('admin/review_verification', ['s' => $submission]);
+        $this->checkPermission('reports');
+        return view('admin/dashboard_reports');
     }
 
-    public function approveVerification($id)
+    // 2. USUÁRIOS
+    public function users()
     {
-        $submission = $this->biModel->find($id);
-        if (! $submission) return redirect()->back();
+        $this->checkPermission('users');
+        $status = $this->request->getGet('status');
+        
+        $builder = $this->userModel->orderBy('created_at', 'DESC');
+        if ($status === 'verified') $builder->where('status', 'verificado');
+        if ($status === 'pending') $builder->where('bi_status', 'pendente');
+        if ($status === 'blocked') $builder->where('status', 'bloqueado');
 
-        $userId = $submission['user_id'];
-
-        // 1. Marcar submissão como aprovada
-        $this->biModel->update($id, [
-            'resultado'      => 'aprovado',
-            'verificado_por' => session()->get('user_id'),
+        return view('admin/users/index', [
+            'users' => $builder->findAll(), 
+            'filterStatus' => $status
         ]);
-
-        // 2. Atualizar status do utilizador
-        $this->userModel->update($userId, [
-            'bi_status'        => 'aprovado',
-            'is_verified_user' => true,
-            'status'           => 'verificado' // Sobe para verificado (Selo ⭐)
-        ]);
-
-        return redirect()->to('/admin/verifications')->with('success', 'Utilizador verificado com sucesso! Selo ⭐ atribuído.');
     }
 
-    public function rejectVerification($id)
+    public function userCreate() { $this->ensureAdmin(); return view('admin/users/create'); }
+    public function userView($id) { $this->ensureAdmin(); return view('admin/users/view', ['user' => $this->userModel->find($id)]); }
+    public function userEdit($id) { $this->ensureAdmin(); return view('admin/users/edit', ['user' => $this->userModel->find($id)]); }
+    public function userVerify($id) { $this->ensureAdmin(); /* Logic */ return redirect()->back(); }
+    public function userBlock($id) { $this->ensureAdmin(); /* Logic */ return redirect()->back(); }
+    public function userDelete($id) { $this->ensureAdmin(); /* Logic */ return redirect()->back(); }
+
+    // 3. IMÓVEIS
+    public function properties()
     {
-        $motivo = $this->request->getPost('motivo');
-        $submission = $this->biModel->find($id);
-        if (! $submission) return redirect()->back();
+        $this->checkPermission('properties');
+        $status = $this->request->getGet('status');
+        
+        $builder = $this->propertyModel->orderBy('created_at', 'DESC');
+        if ($status) $builder->where('status', $status);
 
-        $userId = $submission['user_id'];
-
-        // 1. Rejeitar submissão
-        $this->biModel->update($id, [
-            'resultado'       => 'rejeitado',
-            'motivo_rejeicao' => $motivo,
-            'verificado_por'  => session()->get('user_id'),
+        return view('admin/properties/index', [
+            'properties' => $builder->findAll(), 
+            'filterStatus' => $status
         ]);
-
-        // 2. Notificar utilizador (via status)
-        $this->userModel->update($userId, [
-            'bi_status' => 'rejeitado'
-        ]);
-
-        return redirect()->to('/admin/verifications')->with('info', 'Submissão rejeitada. O utilizador será notificado.');
     }
 
-    // =========================================================================
-    // OUTROS (Legado/Simple)
-    // =========================================================================
+    public function propertiesPending() { return $this->propertiesByStatus('pending'); }
+    public function propertiesApproved() { return $this->propertiesByStatus('active'); }
+    public function propertiesRejected() { return $this->propertiesByStatus('rejected'); }
 
-    public function approveUser($id)
+    private function propertiesByStatus($status)
     {
-        $this->userModel->update($id, ['is_verified_user' => true, 'status' => 'verificado']);
-        return redirect()->to('/admin/dashboard')->with('success', 'Usuário verificado com sucesso!');
+        $this->ensureAdmin();
+        $props = $this->propertyModel->where('status', $status)->findAll();
+        return view('admin/properties/index', ['properties' => $props, 'filterStatus' => $status]);
     }
+
+    public function propertyView($id) { $this->ensureAdmin(); return view('admin/properties/view', ['property' => $this->propertyModel->find($id)]); }
+    public function propertyEdit($id) { $this->ensureAdmin(); return view('admin/properties/edit', ['property' => $this->propertyModel->find($id)]); }
+    public function propertyDelete($id) { $this->ensureAdmin(); $this->propertyModel->delete($id); return redirect()->to('/admin/properties'); }
 
     public function approveProperty($id)
     {
-        $this->propModel->update($id, ['is_verified' => true]);
-        return redirect()->to('/admin/dashboard')->with('success', 'Imóvel aprovado para publicação!');
+        $this->ensureAdmin();
+        $this->propertyModel->update($id, ['status' => 'active', 'is_verified' => 1]);
+        return redirect()->back()->with('success', 'Imóvel aprovado.');
     }
 
     public function rejectProperty($id)
     {
-        $property = $this->propModel->find($id);
-        if ($property) {
-            $this->propModel->delete($id);
-            return redirect()->to('/admin/dashboard')->with('info', 'O imóvel foi removido com sucesso do sistema por não cumprir as políticas.');
-        }
-        return redirect()->to('/admin/dashboard')->with('error', 'Imóvel não encontrado.');
+        $this->ensureAdmin();
+        $this->propertyModel->update($id, ['status' => 'rejected']);
+        return redirect()->back()->with('error', 'Imóvel rejeitado.');
     }
 
-    // =========================================================================
-    // SERVIR IMAGENS SEGURO (BI/Selfie)
-    // =========================================================================
-
-    public function serveImage($path)
+    // 4. VERIFICAÇÕES (KYC)
+    public function verificationQueue()
     {
-        // 1. Verificar permissões (apenas admin ou o próprio dono da imagem)
-        // Por simplicidade no MVP, apenas Admin
-        if (session()->get('user_type') !== 'Admin') {
-            return $this->response->setStatusCode(403)->setBody('Acesso Negado');
-        }
+        $this->checkPermission('verifications');
+        $pending = $this->biModel->where('resultado', 'pendente')->findAll();
+        return view('admin/verifications/index', ['submissions' => $pending]);
+    }
 
-        $fullPath = WRITEPATH . 'uploads/' . $path;
+    public function verificationsPending() { return $this->verificationQueue(); }
+    public function verificationsApproved() 
+    { 
+        $this->ensureAdmin();
+        $approved = $this->biModel->where('resultado', 'aprovado')->findAll();
+        return view('admin/verifications/index', ['submissions' => $approved]);
+    }
+    public function verificationsRejected()
+    {
+        $this->ensureAdmin();
+        $rejected = $this->biModel->where('resultado', 'rejeitado')->findAll();
+        return view('admin/verifications/index', ['submissions' => $rejected]);
+    }
 
-        if (!file_exists($fullPath) || is_dir($fullPath)) {
-            return $this->response->setStatusCode(404)->setBody('Ficheiro não encontrado');
-        }
+    public function reviewVerification($id)
+    {
+        $this->ensureAdmin();
+        $verification = $this->biModel->find($id);
+        if (! $verification) return redirect()->to('/admin/verifications')->with('error', 'não encontrada.');
+        $user = $this->userModel->find($verification['user_id']);
+        return view('admin/verifications/view', ['verification' => $verification, 'user' => $user]);
+    }
 
-        $mime = mime_content_type($fullPath);
+    public function approveVerification($id)
+    {
+        $this->ensureAdmin();
+        $this->biModel->update($id, ['resultado' => 'aprovado']);
+        $ver = $this->biModel->find($id);
+        $this->userModel->update($ver['user_id'], ['bi_status' => 'aprovado', 'status' => 'verificado']);
+        return redirect()->to('/admin/verifications')->with('success', 'Aprovada.');
+    }
+
+    public function rejectVerification($id)
+    {
+        $this->ensureAdmin();
+        $this->biModel->update($id, ['resultado' => 'rejeitado']);
+        $ver = $this->biModel->find($id);
+        $this->userModel->update($ver['user_id'], ['bi_status' => 'rejeitado']);
+        return redirect()->to('/admin/verifications')->with('error', 'Rejeitada.');
+    }
+
+    // Serve BI Image
+    public function serveImage($filename)
+    {
+        $this->ensureAdmin();
+        $path = WRITEPATH . 'uploads/bi/' . $filename;
+        if (! is_file($path)) throw new \CodeIgniter\Exceptions\PageNotFoundException();
+        return $this->response->setHeader('Content-Type', mime_content_type($path))->setBody(file_get_contents($path));
+    }
+
+    // 5. PAGAMENTOS
+    public function paymentsQueue()
+    {
+        $this->checkPermission('payments');
+        $paymentModel = new \App\Models\PaymentModel();
         
-        return $this->response
-            ->setHeader('Content-Type', $mime)
-            ->setBody(file_get_contents($fullPath));
-    }
-
-    // =========================================================================
-    // GESTÃO DE ESCROW (FUNDOS)
-    // =========================================================================
-
-    public function escrow()
-    {
-        $escrowModel = new \App\Models\EscrowModel();
+        $payments = $paymentModel->select('payments.*, users.full_name as user_name')
+                                 ->join('users', 'users.id = payments.user_id')
+                                 ->orderBy('payments.created_at', 'DESC')
+                                 ->findAll();
         
-        // Fetch all escrows with related data
-        $data['escrows'] = $escrowModel->select('escrow_payments.*, rr.tenant_id, rr.owner_id, p.title as property_title, u_tenant.full_name as tenant_name, u_owner.full_name as owner_name')
-            ->join('rental_requests rr', 'escrow_payments.rental_request_id = rr.id')
-            ->join('properties p', 'rr.property_id = p.id')
-            ->join('users u_tenant', 'u_tenant.id = rr.tenant_id')
-            ->join('users u_owner', 'u_owner.id = rr.owner_id')
-            ->orderBy('escrow_payments.created_at', 'DESC')
-            ->findAll();
-
-        return view('admin/escrow', $data);
-    }
-
-    public function refundEscrow($id)
-    {
-        $escrowModel = new \App\Models\EscrowModel();
-        $escrowModel->update($id, [
-            'status' => 'refunded',
-            'released_at' => date('Y-m-d H:i:s')
+        $totalStats = $paymentModel->selectSum('amount', 'total')->first() ?: ['total' => 0];
+        
+        return view('admin/payments/index', [
+            'payments'   => $payments,
+            'totalStats' => $totalStats
         ]);
-
-        return redirect()->to('/admin/escrow')->with('info', 'Fundos devolvidos ao inquilino com sucesso.');
     }
 
-    // =========================================================================
-    // GESTÃO DE COMPROVATIVOS IBAN
-    // =========================================================================
+    public function paymentsPending() { return $this->paymentsByStatus('pending'); }
+    public function paymentsApproved() { return $this->paymentsByStatus('approved'); }
+    public function paymentsRejected() { return $this->paymentsByStatus('rejected'); }
 
-    public function receipts()
+    private function paymentsByStatus($status)
     {
-        $rentalModel = new \App\Models\RentalRequestModel();
+        $this->ensureAdmin();
+        $paymentModel = new \App\Models\PaymentModel();
+        $payments = $paymentModel->select('payments.*, users.full_name as user_name')
+                                 ->join('users', 'users.id = payments.user_id')
+                                 ->where('payments.status', $status)
+                                 ->orderBy('payments.created_at', 'DESC')
+                                 ->findAll();
         
-        $data['requests'] = $rentalModel->select('rental_requests.*, properties.title as property_title, users.full_name as tenant')
-            ->join('properties', 'properties.id = rental_requests.property_id')
-            ->join('users', 'users.id = rental_requests.tenant_id')
-            ->where('rental_requests.status', 'verifying_receipt')
-            ->findAll();
+        $totalStats = $paymentModel->selectSum('amount', 'total')->first() ?: ['total' => 0];
 
-        return view('admin/receipts', $data);
+        return view('admin/payments/index', [
+            'payments'     => $payments, 
+            'filterStatus' => $status,
+            'totalStats'   => $totalStats
+        ]);
     }
 
-    public function validateReceipt($requestId, $action)
+    public function paymentView($id) { $this->ensureAdmin(); return view('admin/payments/view'); }
+
+    public function processPaymentAction($id, $action)
     {
-        $rentalModel = new \App\Models\RentalRequestModel();
-        $request = $rentalModel->find($requestId);
-        
-        if (!$request) return redirect()->back()->with('error', 'Pedido não encontrado');
+        $this->ensureAdmin();
+        $paymentModel = new \App\Models\PaymentModel();
+        $payment = $paymentModel->find($id);
+        if (!$payment) return redirect()->back();
 
         if ($action === 'approve') {
-            $rentalModel->update($requestId, ['status' => 'paid']);
-            
-            // Create escrow entry
-            $escrowModel = new \App\Models\EscrowModel();
-            $escrowModel->insert([
-                'rental_request_id' => $requestId,
-                'amount'            => $request['total_amount'],
-                'status'            => 'held',
-                'payment_method'    => 'Transferência Bancária',
-                'transaction_id'    => 'CS-' . strtoupper(bin2hex(random_bytes(4))),
-                'release_code'      => strtoupper(substr(md5(time().$requestId), 0, 8))
-            ]);
-            
-            return redirect()->back()->with('success', 'Pagamento aprovado e guardado no Cofre Seguro.');
-        }
-
-        if ($action === 'reject') {
-            $paymentData = json_decode($request['payment_intent_id'], true);
-            $paymentData['status'] = 'waiting_proof';
-            $rentalModel->update($requestId, [
-                'status' => 'pending', 
-                'payment_intent_id' => json_encode($paymentData)
-            ]);
-            
-            return redirect()->back()->with('error', 'Comprovativo rejeitado. O inquilino terá de inserir novo ficheiro.');
+            $paymentModel->update($id, ['status' => 'approved']);
+            // Complex activation logic...
+            return redirect()->back()->with('success', 'Aprovado.');
+        } else {
+            $paymentModel->update($id, ['status' => 'rejected']);
+            return redirect()->back()->with('error', 'Rejeitado.');
         }
     }
+
+    // 6. PLANOS
+    public function plans()
+    {
+        $this->checkPermission('plans');
+        $planModel = new \App\Models\PlanModel();
+        return view('admin/plans/index', ['plans' => $planModel->findAll()]);
+    }
+    public function planCreate() { $this->ensureAdmin(); return view('admin/plans/create'); }
+    public function planEdit($id) { $this->ensureAdmin(); return view('admin/plans/edit'); }
+    public function planDelete($id) { $this->ensureAdmin(); return redirect()->back(); }
+    public function planToggle($id) { $this->ensureAdmin(); return redirect()->back(); }
+
+    // 7. DENÚNCIAS
+    public function reportsQueue()
+    {
+        $this->checkPermission('reports');
+        $data = [
+            'reports' => $this->reportModel->getReportsWithDetails('pendente'),
+            'counts'  => [
+                'pendente'   => $this->reportModel->where('status', 'pendente')->countAllResults(),
+                'em_analise' => $this->reportModel->where('status', 'em_analise')->countAllResults(),
+                'resolvido'  => $this->reportModel->where('status', 'resolvido')->countAllResults(),
+            ]
+        ];
+        return view('admin/reports/index', $data);
+    }
+    public function reportView($id) { $this->ensureAdmin(); return view('admin/reports/view'); }
+    public function reportDelete($id) { $this->ensureAdmin(); $this->reportModel->delete($id); return redirect()->back(); }
+    public function updateReport($id)
+    {
+        $this->ensureAdmin();
+        $this->reportModel->update($id, ['status' => $this->request->getPost('status')]);
+        return redirect()->back();
+    }
+
+    // 8. ESTATÍSTICAS
+    public function stats() 
+    { 
+        $this->checkPermission('stats'); 
+        
+        $data = [
+            'usersByType' => $this->userModel->select("user_type, COUNT(*) as total")
+                                  ->groupBy("user_type")
+                                  ->findAll(),
+            'propertyCategories' => $this->propertyModel->select("type, COUNT(*) as total")
+                                        ->groupBy("type")
+                                        ->findAll(),
+            'monthlyVisits' => $this->visitModel->select("MONTH(created_at) as month, COUNT(*) as total")
+                                    ->groupBy("month")
+                                    ->findAll(),
+        ];
+
+        return view('admin/stats/index', $data); 
+    }
+    public function statsVisits() { $this->ensureAdmin(); return view('admin/stats/visits'); }
+    public function statsUsers() { $this->ensureAdmin(); return view('admin/stats/users'); }
+    public function statsProperties() { $this->ensureAdmin(); return view('admin/stats/properties'); }
+    public function statsPayments() { $this->ensureAdmin(); return view('admin/stats/payments'); }
+
+    // 9. MENSAGENS
+    public function messages()
+    {
+        $this->checkPermission('messages');
+        $convModel = new \App\Models\ConversationModel();
+        return view('admin/messages/index', ['conversations' => $convModel->findAll()]);
+    }
+    public function messageView($id) 
+    { 
+        $this->ensureAdmin(); 
+        $convModel = new \App\Models\ConversationModel();
+        $msgModel = new \App\Models\MessageModel();
+        $userModel = new \App\Models\UserModel();
+        $propModel = new \App\Models\PropertyModel();
+
+        $conversation = $convModel->find($id);
+        if (!$conversation) return redirect()->to('/admin/messages')->with('error', 'Conversa não encontrada.');
+
+        $data = [
+            'conversation' => $conversation,
+            'messages'     => $msgModel->getMessagesForConversation($id),
+            'tenant'       => $userModel->find($conversation['tenant_id']),
+            'owner'        => $userModel->find($conversation['owner_id']),
+            'property'     => $propModel->find($conversation['property_id'])
+        ];
+
+        return view('admin/messages/view', $data); 
+    }
+    public function messageBlock($id) { $this->ensureAdmin(); return redirect()->back(); }
+
+    // 10. MAPA
+    public function map() { $this->checkPermission('map'); return view('admin/map/index'); }
+    public function mapProperties() { $this->ensureAdmin(); return view('admin/map/properties'); }
+    public function mapHeatmap() { $this->ensureAdmin(); return view('admin/map/heatmap'); }
+
+    // 11. CONFIGURAÇÕES
+    public function settings() { $this->checkPermission('settings'); return view('admin/settings/general'); }
+    public function settingsGeneral() { return $this->settings(); }
+    public function settingsPayments() { $this->ensureAdmin(); return view('admin/settings/payments'); }
+    public function settingsSecurity() { $this->ensureAdmin(); return view('admin/settings/security'); }
+    public function settingsLimits() { $this->ensureAdmin(); return view('admin/settings/limits'); }
+    public function settingsEmail() { $this->ensureAdmin(); return view('admin/settings/email'); }
+
+    // 12. LOGS DO SISTEMA
+    public function logs()
+    {
+        $this->checkPermission('logs');
+        return view('admin/logs/index', ['logs' => $this->loginModel->limit(100)->findAll()]);
+    }
+    public function logsLogins() { return $this->logs(); }
+    public function logsErrors() { $this->ensureAdmin(); return view('admin/logs/errors'); }
+    public function logsActions() { $this->ensureAdmin(); return view('admin/logs/actions'); }
+
+    // 13. NOTIFICAÇÕES
+    public function notifications() { $this->checkPermission('notifications'); return view('admin/notifications/index'); }
+    public function notificationSend() { $this->ensureAdmin(); return view('admin/notifications/send'); }
+
+    // 14. ADMINISTRADORES
+    public function admins() { $this->checkPermission('admins'); return view('admin/admins/index'); }
+    public function adminCreate() { $this->ensureAdmin(); return view('admin/admins/create'); }
+    public function adminEdit($id) { $this->ensureAdmin(); return view('admin/admins/edit'); }
+    public function adminDelete($id) { $this->ensureAdmin(); return redirect()->back(); }
 }
+?>

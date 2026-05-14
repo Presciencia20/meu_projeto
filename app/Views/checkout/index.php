@@ -110,6 +110,17 @@
         width: 6px;
         background: var(--primary);
     }
+
+    @media (max-width: 768px) {
+        .checkout-container { margin: 30px auto; gap: 32px; padding: 0 16px; }
+        .checkout-main { padding: 24px; border-radius: 32px; }
+        .checkout-main header h1 { font-size: 1.5rem !important; }
+        .summary-card { padding: 24px; border-radius: 32px; position: static; }
+        .trust-badge-box { padding: 20px; border-radius: 24px; margin: 32px 0; }
+        .payment-option { padding: 16px; flex-direction: column; align-items: flex-start; gap: 12px; position: relative; }
+        .payment-option .icon-box { margin-bottom: 8px; }
+        .payment-option .check-icon { align-self: flex-end; position: absolute; right: 16px; top: 16px; }
+    }
 </style>
 <?= $this->endSection() ?>
 
@@ -162,6 +173,7 @@
             </div>
 
             <form action="/checkout/process/<?= $property['id'] ?>" method="POST">
+                <?= csrf_field() ?>
                 <input type="hidden" name="payment_method" id="payment_method" value="mcx">
                 <button type="submit" class="btn-primary" style="width: 100%; padding: 20px; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 12px;">
                     <i data-lucide="lock" style="width: 20px;"></i> Continuar Para Pagar Seguro

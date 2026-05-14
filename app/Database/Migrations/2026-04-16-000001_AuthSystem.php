@@ -129,8 +129,9 @@ class AuthSystem extends Migration
                 'auto_increment' => true,
             ],
             'user_id' => [
-                'type' => 'INT',
-                'null' => false,
+                'type'     => 'INT',
+                'unsigned' => true,
+                'null'     => false,
             ],
             'foto_frente' => [
                 'type'       => 'VARCHAR',

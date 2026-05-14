@@ -29,13 +29,19 @@ class Chat extends BaseController
         $conversation = $convModel->find($id);
         if (!$conversation) throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
 
-        // Security check: user must be either tenant or owner
+        // Security check: user must be either tenant or owner (Admins can see everything)
         $userId = session()->get('user_id');
-        if ($conversation['tenant_id'] != $userId && $conversation['owner_id'] != $userId) {
+        $isAdmin = (session()->get('user_type') === 'Admin' || session()->get('user_type') === 'Super Admin');
+        
+        if (!$isAdmin && $conversation['tenant_id'] != $userId && $conversation['owner_id'] != $userId) {
             return redirect()->to('/dashboard')->with('error', 'Acesso negado.');
         }
 
         $data['conversation'] = $conversation;
+        
+        // Mark as read
+        $msgModel->markAsReadInConversation($id, $userId);
+        
         $data['messages'] = $msgModel->getMessagesForConversation($id);
         $data['userId'] = $userId;
         

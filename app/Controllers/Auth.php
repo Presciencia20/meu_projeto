@@ -11,6 +11,7 @@ use App\Models\VerificacaoBiModel;
 class Auth extends BaseController
 {
     protected SmsService        $sms;
+    protected \App\Libraries\EmailService $emailService;
     protected OtpModel          $otpModel;
     protected TwilioVerifyService  $twilioVerify;
     protected UserModel         $userModel;
@@ -23,11 +24,12 @@ class Auth extends BaseController
     ): void {
         parent::initController($request, $response, $logger);
 
-        $this->sms       = new SmsService();
-        $this->otpModel  = new OtpModel();
-        $this->twilioVerify  = new TwilioVerifyService();
-        $this->userModel = new UserModel();
-        $this->biModel   = new VerificacaoBiModel();
+        $this->sms          = new SmsService();
+        $this->emailService = new \App\Libraries\EmailService();
+        $this->otpModel     = new OtpModel();
+        $this->twilioVerify = new TwilioVerifyService();
+        $this->userModel    = new UserModel();
+        $this->biModel      = new VerificacaoBiModel();
     }
 
     // =========================================================================
@@ -41,35 +43,59 @@ class Auth extends BaseController
 
     public function processStep1()
     {
-        $phone = $this->request->getPost('phone');
-        $phone = SmsService::normalizeAngolan((string) $phone);
+        $identifier = $this->request->getPost('identifier'); // Pode ser email ou telefone
+        $method     = $this->request->getPost('method');     // 'email' ou 'phone'
 
-        // Verificar se já existe account com este número
-        if ($this->userModel->where('phone', $phone)->first()) {
+        if ($method === 'phone') {
             return redirect()->back()
-                ->with('error', 'Este número já tem uma conta. Faça login ou recupere a senha.');
+                ->with('error', 'O envio por SMS está temporariamente indisponível. Por favor use o Email.')
+                ->withInput();
         }
 
-        // Cooldown de 60s
-        $cooldown = $this->otpModel->cooldownRemaining($phone, 'registo');
+        // Se for email, validar formato
+        if ($method === 'email' && ! filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            return redirect()->back()
+                ->with('error', 'Por favor introduza um email válido.')
+                ->withInput();
+        }
+
+        // Verificar se já existe account
+        $user = ($method === 'phone') 
+                ? $this->userModel->where('phone', SmsService::normalizeAngolan($identifier))->first()
+                : $this->userModel->where('email', $identifier)->first();
+
+        if ($user) {
+            return redirect()->back()
+                ->with('error', 'Este contacto já tem uma conta associada. Faça login.')
+                ->withInput();
+        }
+
+        // Cooldown
+        $cooldown = $this->otpModel->cooldownRemaining($identifier, 'registo');
         if ($cooldown > 0) {
             return redirect()->back()
-                ->with('error', "Aguarde {$cooldown} segundos antes de pedir um novo código.");
+                ->with('error', "Aguarde {$cooldown} segundos para o próximo código.");
         }
 
-        $codigo = $this->otpModel->generateAndSave($phone, 'registo');
-        $this->sms->send($phone, "CasaSegura: O seu código de verificação é {$codigo}. Válido por 5 minutos.");
+        $codigo = $this->otpModel->generateAndSave($identifier, 'registo');
+        
+        if ($method === 'email') {
+            $this->emailService->sendOtp($identifier, $codigo);
+        } else {
+            $this->sms->send($identifier, "CasaSegura: O seu código é {$codigo}");
+        }
 
-        // Guardar telemóvel em sessão temporária
-        session()->set('reg_phone', $phone);
+        // Guardar identificador em sessão
+        session()->set('reg_identifier', $identifier);
+        session()->set('reg_method', $method);
 
-        // Em modo desenvolvimento, mostrar código na UI
+        // Em modo desenvolvimento
         if (env('SMS_FAKE', true)) {
             session()->setFlashdata('dev_otp_code', $codigo);
         }
 
         return redirect()->to('/auth/verify-otp')
-            ->with('info', 'Código enviado! Verifique o seu telemóvel.');
+            ->with('info', 'Código enviado! Verifique a sua caixa de entrada.');
     }
 
     // =========================================================================
@@ -78,13 +104,13 @@ class Auth extends BaseController
 
     public function showVerifyOtp()
     {
-        if (! session()->get('reg_phone')) {
+        if (! session()->get('reg_identifier')) {
             return redirect()->to('/signup');
         }
 
         // Calcular tempo restante para o OTP
-        $phone = session()->get('reg_phone');
-        $record = $this->otpModel->where('telemovel', $phone)
+        $identifier = session()->get('reg_identifier');
+        $record = $this->otpModel->where('telemovel', $identifier)
                                  ->where('tipo', 'registo')
                                  ->where('usado', 0)
                                  ->where('expira_em >', date('Y-m-d H:i:s'))
@@ -96,26 +122,26 @@ class Auth extends BaseController
             $remainingSeconds = max(0, strtotime($record['expira_em']) - time());
         }
 
-        return view('auth/otp', ['remainingSeconds' => $remainingSeconds]);
+        return view('auth/otp', ['remainingSeconds' => $remainingSeconds, 'identifier' => $identifier]);
     }
 
     public function processVerifyOtp()
     {
-        $phone = session()->get('reg_phone');
+        $identifier = session()->get('reg_identifier');
 
-        if (! $phone) {
+        if (! $identifier) {
             return redirect()->to('/signup');
         }
 
         $codigo = $this->request->getPost('codigo');
 
-        if (! $this->otpModel->verify($phone, $codigo, 'registo')) {
+        if (! $this->otpModel->verify($identifier, $codigo, 'registo')) {
             return redirect()->back()
                 ->with('error', 'Código inválido ou expirado. Tente novamente.');
         }
 
         // OTP validado — avançar para criar conta
-        session()->set('reg_phone_verified', true);
+        session()->set('reg_verified', true);
 
         return redirect()->to('/auth/step2');
     }
@@ -126,7 +152,7 @@ class Auth extends BaseController
 
     public function showRegisterStep2()
     {
-        if (! session()->get('reg_phone_verified')) {
+        if (! session()->get('reg_verified')) {
             return redirect()->to('/signup');
         }
 
@@ -135,45 +161,80 @@ class Auth extends BaseController
 
     public function processStep2()
     {
-        if (! session()->get('reg_phone_verified')) {
+        if (! session()->get('reg_verified')) {
             return redirect()->to('/signup');
         }
 
-        $phone    = session()->get('reg_phone');
-        $fullName = $this->request->getPost('full_name');
-        $senha    = $this->request->getPost('password');
-        $tipo     = $this->request->getPost('user_type');
+        $identifier = session()->get('reg_identifier');
+        $method     = session()->get('reg_method');
+        $fullName   = $this->request->getPost('full_name');
+        $senha      = $this->request->getPost('password');
+        $tipo       = $this->request->getPost('user_type');
 
-        // Validações básicas
-        if (strlen($senha) < 8) {
+        // Validações usando o serviço de validação
+        if (! $this->validate([
+            'full_name' => 'required|min_length[3]|max_length[255]',
+            'password'  => 'required|min_length[8]',
+            'user_type' => 'required|in_list[Inquilino,Proprietário,Intermediário,Admin]',
+        ], [
+            'full_name' => [
+                'required' => 'O nome completo é obrigatório.',
+                'min_length' => 'O nome deve ter pelo menos 3 caracteres.'
+            ],
+            'password' => [
+                'required' => 'A senha é obrigatória.',
+                'min_length' => 'A senha deve ter pelo menos 8 caracteres.'
+            ]
+        ])) {
             return redirect()->back()
-                ->with('error', 'A senha deve ter pelo menos 8 caracteres.')
+                ->with('error', $this->validator->getError('password') ?: $this->validator->listErrors())
                 ->withInput();
         }
 
         $data = [
-            'phone'      => $phone,
-            'full_name'  => $fullName,
-            'password'   => $senha,
-            'user_type'  => $tipo,
-            'active_role'=> $tipo,
-            'status'     => 'ativo',
+            'full_name'   => $fullName,
+            'password'    => $senha,
+            'user_type'   => $tipo,
+            'active_role' => $tipo,
+            'status'      => 'ativo',
         ];
 
-        $userId = $this->userModel->insert($data);
+        if ($method === 'phone') {
+            $data['phone'] = SmsService::normalizeAngolan($identifier);
+        } else {
+            $data['email'] = $identifier;
+            // Get phone from POST if registration started via Email
+            $postPhone = $this->request->getPost('phone');
+            if ($postPhone) {
+                $data['phone'] = SmsService::normalizeAngolan($postPhone);
+            }
+        }
 
-        if (! $userId) {
+        // Auto-assign Free Plan (Iniciação)
+        $planModel = new \App\Models\PlanModel();
+        $freePlan  = $planModel->where('name', 'Iniciação')->first();
+        
+        if ($freePlan) {
+            $data['plan_id'] = $freePlan['id'];
+            $data['plan_expires_at'] = date('Y-m-d H:i:s', strtotime("+{$freePlan['duration_days']} days"));
+        }
+
+        if (! $this->userModel->insert($data)) {
+            $errors = $this->userModel->errors();
+            $errorMsg = !empty($errors) ? implode(' ', $errors) : 'Erro desconhecido ao salvar os dados.';
             return redirect()->back()
-                ->with('error', 'Erro ao criar conta. Tente novamente.')
+                ->with('error', 'Falha ao criar conta: ' . $errorMsg)
                 ->withInput();
         }
+        
+        $userId = $this->userModel->getInsertID();
 
         // Login automático
         $user = $this->userModel->find($userId);
-        $this->_startSession($user);
+        $this->startSession($user);
 
         // Limpar sessão temporária de registo
-        session()->remove(['reg_phone', 'reg_phone_verified']);
+        session()->remove(['reg_identifier', 'reg_method', 'reg_verified']);
 
         // Proprietários/Intermediários → pedir BI
         if (in_array($tipo, ['Proprietário', 'Intermediário'])) {
@@ -278,15 +339,30 @@ class Auth extends BaseController
 
     public function processLogin()
     {
-        $phone    = SmsService::normalizeAngolan((string) $this->request->getPost('phone'));
-        $password = $this->request->getPost('password');
+        $identifier = $this->request->getPost('email'); // Accept email or phone input
+        if (! $this->validate([
+            'email'    => 'required',
+            'password' => 'required',
+        ])) {
+            return redirect()->back()
+                ->with('error', 'Por favor, preencha todos os campos.')
+                ->withInput();
+        }
 
-        $user = $this->userModel->where('phone', $phone)->first();
+        $password   = $this->request->getPost('password');
+
+        // Determinar se é email ou phone
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            $user = $this->userModel->where('email', $identifier)->first();
+        } else {
+            $phone = SmsService::normalizeAngolan((string) $identifier);
+            $user = $this->userModel->where('phone', $phone)->first();
+        }
 
         // Conta não existe
         if (! $user) {
             return redirect()->back()
-                ->with('error', 'Número de telemóvel não encontrado.')
+                ->with('error', 'Credenciais inválidas.')
                 ->withInput();
         }
 
@@ -318,7 +394,8 @@ class Auth extends BaseController
 
         // Login bem-sucedido
         $this->userModel->resetLoginAttempts($user['id']);
-        $this->_startSession($user);
+        $this->trackLogin((int) $user['id']);
+        $this->startSession($user);
 
         return redirect()->to('/dashboard');
     }
@@ -329,48 +406,55 @@ class Auth extends BaseController
 
     public function sendLoginOtp()
     {
-        $phone = SmsService::normalizeAngolan((string) $this->request->getPost('phone'));
+        $identifier = $this->request->getPost('identifier');
+        $method     = $this->request->getPost('method') ?: 'email';
 
-        $user = $this->userModel->where('phone', $phone)->first();
+        if ($method === 'phone') {
+            return $this->response->setJSON(['ok' => false, 'error' => 'Envio por SMS indisponível.']);
+        }
+
+        $user = $this->userModel->where('email', $identifier)->first();
         if (! $user) {
-            return $this->response->setJSON(['ok' => false, 'error' => 'Número não encontrado.']);
+            return $this->response->setJSON(['ok' => false, 'error' => 'Email não encontrado.']);
         }
 
         // Cooldown
-        $cooldown = $this->otpModel->cooldownRemaining($phone, 'login');
+        $cooldown = $this->otpModel->cooldownRemaining($identifier, 'login');
         if ($cooldown > 0) {
             return $this->response->setJSON(['ok' => false, 'error' => "Aguarde {$cooldown}s."]);
         }
 
-        $codigo = $this->otpModel->generateAndSave($phone, 'login');
-        $ok     = $this->sms->send($phone, "CasaSegura: O seu código de acesso é {$codigo}. Válido por 5 minutos.");
+        $codigo = $this->otpModel->generateAndSave($identifier, 'login');
+        $ok     = $this->emailService->sendOtp($identifier, $codigo);
 
-        session()->set('otp_login_phone', $phone);
+        session()->set('otp_login_identifier', $identifier);
+        session()->set('otp_login_method', 'email');
 
         return $this->response->setJSON(['ok' => $ok]);
     }
 
     public function processLoginOtp()
     {
-        $phone  = session()->get('otp_login_phone');
-        $codigo = $this->request->getPost('codigo');
+        $identifier = session()->get('otp_login_identifier');
+        $codigo     = $this->request->getPost('codigo');
 
-        if (! $phone) {
+        if (! $identifier) {
             return redirect()->to('/login')->with('error', 'Sessão expirada. Tente novamente.');
         }
 
-        if (! $this->otpModel->verify($phone, $codigo, 'login')) {
+        if (! $this->otpModel->verify($identifier, $codigo, 'login')) {
             return redirect()->back()->with('error', 'Código inválido ou expirado.');
         }
 
-        $user = $this->userModel->where('phone', $phone)->first();
+        $user = $this->userModel->where('email', $identifier)->first();
         if (! $user) {
             return redirect()->to('/login')->with('error', 'Conta não encontrada.');
         }
 
         $this->userModel->resetLoginAttempts($user['id']);
-        $this->_startSession($user);
-        session()->remove('otp_login_phone');
+        $this->trackLogin((int) $user['id']);
+        $this->startSession($user);
+        session()->remove(['otp_login_identifier', 'otp_login_method']);
 
         return redirect()->to('/dashboard');
     }
@@ -386,28 +470,37 @@ class Auth extends BaseController
 
     public function processForgotPassword()
     {
-        $phone = SmsService::normalizeAngolan((string) $this->request->getPost('phone'));
+        $email = $this->request->getPost('email');
 
-        $user = $this->userModel->where('phone', $phone)->first();
-        if (! $user) {
-            // Não revelar se o número existe (segurança)
-            return redirect()->to('/auth/reset')
-                ->with('info', 'Se o número estiver registado, receberá um código SMS.');
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return redirect()->back()->with('error', 'Por favor introduza um email válido.')->withInput();
         }
 
-        $cooldown = $this->otpModel->cooldownRemaining($phone, 'recuperacao');
+        $user = $this->userModel->where('email', $email)->first();
+        if (!$user) {
+            // Não revelar se o email existe (segurança)
+            return redirect()->to('/auth/reset')
+                ->with('info', 'Se o email estiver registado, receberá um código de recuperação.');
+        }
+
+        $cooldown = $this->otpModel->cooldownRemaining($email, 'recuperacao');
         if ($cooldown > 0) {
             return redirect()->back()
                 ->with('error', "Aguarde {$cooldown} segundos antes de pedir novo código.");
         }
 
-        $codigo = $this->otpModel->generateAndSave($phone, 'recuperacao');
-        $this->sms->send($phone, "CasaSegura: Recuperação de senha — código {$codigo}. Válido por 5 minutos. Não partilhe.");
+        $codigo = $this->otpModel->generateAndSave($email, 'recuperacao');
+        $this->emailService->sendOtp($email, $codigo);
 
-        session()->set('reset_phone', $phone);
+        session()->set('reset_email', $email);
+
+        // Debug em desenvolvimento
+        if (env('SMS_FAKE', true)) {
+            session()->setFlashdata('dev_otp_code', $codigo);
+        }
 
         return redirect()->to('/auth/reset')
-            ->with('info', 'Código enviado! Verifique o seu telemóvel.');
+            ->with('info', 'Código enviado! Verifique a sua caixa de entrada.');
     }
 
     public function showResetPassword()
@@ -417,12 +510,12 @@ class Auth extends BaseController
 
     public function processResetPassword()
     {
-        $phone    = session()->get('reset_phone');
+        $email    = session()->get('reset_email');
         $codigo   = $this->request->getPost('codigo');
         $novaSenha = $this->request->getPost('password');
         $confirmar = $this->request->getPost('password_confirm');
 
-        if (! $phone) {
+        if (!$email) {
             return redirect()->to('/forgot-password')
                 ->with('error', 'Sessão expirada. Inicie o processo novamente.');
         }
@@ -436,18 +529,18 @@ class Auth extends BaseController
                 ->with('error', 'A senha deve ter pelo menos 8 caracteres.')->withInput();
         }
 
-        if (! $this->otpModel->verify($phone, $codigo, 'recuperacao')) {
+        if (!$this->otpModel->verify($email, $codigo, 'recuperacao')) {
             return redirect()->back()->with('error', 'Código inválido ou expirado.')->withInput();
         }
 
-        $user = $this->userModel->where('phone', $phone)->first();
+        $user = $this->userModel->where('email', $email)->first();
         $this->userModel->update($user['id'], [
             'password'       => $novaSenha,
             'login_attempts' => 0,
             'locked_until'   => null,
         ]);
 
-        session()->remove('reset_phone');
+        session()->remove('reset_email');
 
         return redirect()->to('/login')
             ->with('success', 'Senha alterada com sucesso! Faça login com a nova senha.');
@@ -467,14 +560,34 @@ class Auth extends BaseController
     // Helper privado — iniciar sessão
     // =========================================================================
 
-    private function _startSession(array $user): void
+    private function startSession(array $user): void
     {
+        $profileModel = new \App\Models\ProfileModel();
+        $profile = $profileModel->where('user_id', $user['id'])->first();
+
         session()->set([
-            'isLoggedIn' => true,
-            'user_id'    => $user['id'],
-            'full_name'  => $user['full_name'],
-            'user_type'  => $user['user_type'],
-            'phone'      => $user['phone'],
+            'isLoggedIn'  => true,
+            'user_id'     => $user['id'],
+            'full_name'   => $user['full_name'],
+            'user_type'   => $user['user_type'], // Legacy support
+            'is_admin'    => (bool) $user['is_admin'],
+            'is_owner'    => (bool) $user['is_owner'],
+            'is_client'   => (bool) $user['is_client'],
+            'active_role' => $user['active_role'] ?: ($user['is_admin'] ? 'admin' : ($user['is_owner'] ? 'owner' : 'client')),
+            'phone'       => $user['phone'],
+            'user_photo'  => $profile['photo'] ?? null,
+        ]);
+    }
+
+    /**
+     * Record login event for analytics.
+     */
+    private function trackLogin(int $userId): void
+    {
+        $loginModel = new \App\Models\LoginModel();
+        $loginModel->insert([
+            'user_id'    => $userId,
+            'ip_address' => $this->request->getIPAddress()
         ]);
     }
 }

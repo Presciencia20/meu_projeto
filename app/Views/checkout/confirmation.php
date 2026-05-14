@@ -80,6 +80,14 @@
         color: var(--slate-900);
         margin: 24px 0;
     }
+
+    @media (max-width: 768px) {
+        .confirm-container { margin: 40px auto; }
+        .confirm-card { padding: 24px; border-radius: 24px; }
+        .confirm-card header h1 { font-size: 1.7rem !important; }
+        .mcx-data-box { padding: 20px !important; border-radius: 16px !important; }
+        .mcx-data-box > div { font-size: 1rem !important; }
+    }
 </style>
 <?= $this->endSection() ?>
 
@@ -92,7 +100,7 @@
                     <p style="color: var(--slate-500);">Efetue a transferência usando os dados abaixo e anexe o comprovativo.</p>
                 </header>
 
-                <div style="background: var(--slate-50); padding: 32px; border-radius: 24px; border: 1px dashed var(--slate-200); margin-bottom: 32px;">
+                <div class="mcx-data-box" style="background: var(--slate-50); padding: 32px; border-radius: 24px; border: 1px dashed var(--slate-200); margin-bottom: 32px;">
                     <div style="font-weight: 800; color: var(--slate-900); font-size: 1.1rem; margin-bottom: 16px;">Dados para Transferência</div>
                     <div style="display: flex; flex-direction: column; gap: 12px; font-size: 1.1rem;">
                         <div style="display: flex; justify-content: space-between;">
@@ -124,6 +132,7 @@
                     </div>
                 <?php else: ?>
                     <form action="/checkout/uploadProof/<?= $r['id'] ?>" method="POST" enctype="multipart/form-data" style="background: white; padding: 32px; border-radius: 24px; border: 1px solid var(--secondary); box-shadow: 0 10px 25px rgba(5, 150, 105, 0.1);">
+                        <?= csrf_field() ?>
                         <div style="font-weight: 800; color: var(--secondary); margin-bottom: 16px; font-size: 1.05rem;">
                             1. Já efetuou a transferência?
                         </div>
@@ -174,6 +183,7 @@
                 <div class="countdown" id="timer">02:00</div>
                 
                 <form action="/checkout/complete/<?= $r['id'] ?>" method="POST" id="completeForm" style="display: none;">
+                    <?= csrf_field() ?>
                     <button type="submit" class="btn-primary" style="width: 100%; padding: 20px;">
                         Pagamento Confirmado
                     </button>

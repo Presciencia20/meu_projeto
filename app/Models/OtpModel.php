@@ -27,7 +27,7 @@ class OtpModel extends Model
              ->set(['usado' => 1])
              ->update();
 
-        $codigo   = (string) random_int(100000, 999999);
+        $codigo   = env('SMS_FAKE', false) ? '123456' : (string) random_int(100000, 999999);
         $expiraEm = date('Y-m-d H:i:s', strtotime('+5 minutes'));
 
         $this->insert([

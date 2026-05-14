@@ -27,4 +27,26 @@ class MessageModel extends Model
             ->orderBy('created_at', 'ASC')
             ->findAll();
     }
+
+    public function countUnreadForUser($userId)
+    {
+        return $this->db->table('messages m')
+            ->join('conversations c', 'm.conversation_id = c.id')
+            ->where('m.sender_id !=', $userId)
+            ->where('m.read', 0)
+            ->groupStart()
+                ->where('c.tenant_id', $userId)
+                ->orWhere('c.owner_id', $userId)
+            ->groupEnd()
+            ->countAllResults();
+    }
+
+    public function markAsReadInConversation($conversationId, $userId)
+    {
+        return $this->where('conversation_id', $conversationId)
+                    ->where('sender_id !=', $userId)
+                    ->where('read', 0)
+                    ->set(['read' => 1])
+                    ->update();
+    }
 }

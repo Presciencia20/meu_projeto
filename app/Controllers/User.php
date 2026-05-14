@@ -19,6 +19,10 @@ class User extends BaseController
         $userId = session()->get('user_id');
         $userModel = new UserModel();
         $user = $userModel->find($userId);
+        
+        if (!$user) {
+            return redirect()->to('/logout');
+        }
 
         $statsModel = new \App\Models\UserStatModel();
         
@@ -130,14 +134,23 @@ class User extends BaseController
             $userModel->update($userId, $userData);
             $profileModel->where('user_id', $userId)->set($profileData)->update();
 
+            if (isset($profileData['photo'])) {
+                session()->set('user_photo', $profileData['photo']);
+            }
+
             return redirect()->to('/user/settings')->with('success', 'Perfil atualizado com sucesso!');
         }
 
         $data = [
             'user'    => $userModel->find($userId),
-            'profile' => $profileModel->getByUserId($userId),
-            'title'   => 'Configurações de Perfil'
         ];
+
+        if (!$data['user']) {
+            return redirect()->to('/logout');
+        }
+
+        $data['profile'] = $profileModel->getByUserId($userId);
+        $data['title'] = 'Configurações de Perfil';
 
         return view('profile/settings', $data);
     }
@@ -155,5 +168,21 @@ class User extends BaseController
         }
 
         return view('user/verify');
+    }
+    public function favorites()
+    {
+        if (!session()->get('isLoggedIn')) {
+            return redirect()->to('/login');
+        }
+
+        $userId = session()->get('user_id');
+        $favoriteModel = new \App\Models\FavoriteModel();
+        
+        $data = [
+            'favorites' => $favoriteModel->getUserFavorites($userId),
+            'title'     => 'Meus Favoritos'
+        ];
+
+        return view('user/favorites', $data);
     }
 }

@@ -2,283 +2,218 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title><?= $this->renderSection('title') ?> | CasaSegura</title>
     
-    <!-- Google Fonts: Poppins & Inter -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
     
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <style>
         :root {
-            --primary: #1A56DB;
-            --primary-50: #EFF6FF;
-            --primary-600: #1C64F2;
-            --primary-dark: #1241A3;
-            --slate-50: #F9FAFB;
-            --slate-100: #F1F5F9;
-            --slate-200: #E2E8F0;
-            --slate-400: #94A3B8;
-            --slate-500: #6B7280;
-            --slate-600: #4B5563;
-            --slate-800: #1F2937;
-            --slate-900: #111827;
-            --white: #ffffff;
-            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
-            --radius-lg: 24px;
+            --app-primary: #FF6B35;
+            --app-primary-dark: #e55a2b;
+            --app-secondary: #0f172a;
+            --app-bg: #ffffff;
+            --app-gray: #f8fafc;
+            --app-radius: 32px;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
-        }
-
-        h1, h2, h3, h4 {
-            font-family: 'Poppins', sans-serif;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Outfit', sans-serif; }
 
         body {
-            background-color: var(--white);
-            color: var(--slate-900);
+            background-color: var(--app-bg);
+            color: var(--app-secondary);
             height: 100vh;
             overflow: hidden;
         }
 
-        .auth-wrapper {
+        .split-layout {
             display: flex;
             height: 100vh;
             width: 100%;
         }
 
-        /* Left Side: Image */
-        .auth-visual {
-            flex: 1;
+        /* Side Illustration Panel */
+        .auth-side-panel {
+            flex: 1.2;
             position: relative;
-            background-image: url('/img/auth_bg.jpg');
-            background-size: cover;
-            background-position: center;
-            display: none;
+            background: #0f172a;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        @media (min-width: 1024px) {
-            .auth-visual {
-                display: flex;
-                flex-direction: column;
-                justify-content: flex-end;
-                padding: 60px;
-            }
-        }
-
-        .auth-visual::before {
-            content: '';
+        .auth-image {
             position: absolute;
             inset: 0;
-            background: linear-gradient(to bottom, rgba(17, 24, 39, 0.1), rgba(17, 24, 39, 0.8));
-        }
-
-        .visual-content {
-            position: relative;
-            z-index: 1;
-            color: white;
-            max-width: 500px;
-        }
-
-        .visual-content h2 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 20px;
-        }
-
-        .visual-content p {
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.9);
-            font-weight: 400;
-        }
-
-        /* Right Side: Content */
-        .auth-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-            padding: 40px;
-            background: var(--white);
-        }
-
-        @media (min-width: 1024px) {
-            .auth-content {
-                flex: 0 0 600px;
-                padding: 60px 80px;
-            }
-        }
-
-        .auth-logo {
-            display: inline-block;
-            background: white;
-            padding: 12px;
-            border-radius: 20px;
-            box-shadow: var(--shadow-xl);
-            margin-bottom: 40px;
-            transition: all 0.3s ease;
-        }
-
-        .auth-logo:hover {
-            transform: translateY(-4px);
-        }
-
-        .auth-logo img {
-            height: 64px;
-            width: auto;
-        }
-
-        .auth-form-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            max-width: 440px;
-            margin: 0 auto;
             width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.8;
+            filter: saturate(1.2) contrast(1.1);
         }
 
-        /* Shared Styles from main.php */
+        .auth-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.2) 100%);
+            z-index: 2;
+        }
+
+        .auth-side-content {
+            position: relative;
+            z-index: 3;
+            padding: 80px;
+            color: white;
+            max-width: 600px;
+        }
+
+        .auth-side-content h2 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 24px;
+            letter-spacing: -2px;
+        }
+
+        .auth-side-content p {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            font-weight: 500;
+            line-height: 1.6;
+        }
+
+        /* Form Panel */
+        .auth-form-panel {
+            flex: 1;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .auth-form-inner {
+            width: 100%;
+            max-width: 440px;
+        }
+
+        .mobile-logo { display: none; margin-bottom: 40px; text-align: center; }
+        .mobile-logo img { height: 50px; }
+
+        @media (max-width: 1024px) {
+            .auth-side-panel { display: none; }
+            body { overflow: auto; }
+            .auth-form-panel { padding: 40px 24px; min-height: 100vh; }
+            .mobile-logo { display: block; }
+        }
+
+        /* Modern Elements */
         .input-modern {
             width: 100%;
-            padding: 16px 20px;
-            background: var(--slate-50);
-            border: 1px solid var(--slate-200);
-            border-radius: 16px;
-            font-size: 0.95rem;
-            font-weight: 500;
-            transition: all 0.2s;
+            padding: 18px 24px;
+            background: #f1f5f9;
+            border: 2px solid transparent;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             outline: none;
+            margin-bottom: 20px;
+            color: var(--app-secondary);
         }
 
         .input-modern:focus {
             background: white;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 4px var(--primary-50);
+            border-color: var(--app-primary);
+            box-shadow: 0 10px 25px rgba(255, 107, 53, 0.1);
         }
 
-        .btn-primary {
-            background: var(--primary);
+        .btn-app-primary {
+            width: 100%;
+            background: var(--app-primary);
             color: white;
-            padding: 16px 28px;
-            border-radius: 16px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1rem;
-            transition: all 0.2s;
+            padding: 20px;
             border: none;
+            border-radius: 24px;
+            font-size: 1.1rem;
+            font-weight: 800;
             cursor: pointer;
-            box-shadow: 0 4px 12px rgba(26, 86, 219, 0.1);
-            display: inline-flex;
+            transition: all 0.3s;
+            display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 12px;
+            box-shadow: 0 12px 28px rgba(255, 107, 53, 0.25);
         }
 
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(26, 86, 219, 0.2);
+        .btn-app-primary:hover {
+            transform: translateY(-3px);
+            background: var(--app-primary-dark);
+            box-shadow: 0 15px 35px rgba(255, 107, 53, 0.35);
         }
 
         .alert {
             padding: 16px 20px;
-            border-radius: 16px;
+            border-radius: 20px;
             margin-bottom: 24px;
             font-size: 0.9rem;
-            font-weight: 500;
+            font-weight: 700;
             display: flex;
             align-items: center;
             gap: 12px;
+            background: #fee2e2;
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.1);
         }
 
-        .alert-error {
-            background: #FEF2F2;
-            color: #DC2626;
-            border: 1px solid rgba(220, 38, 38, 0.1);
-        }
-
-        .info-section {
-            margin-top: 60px;
-            padding-top: 40px;
-            border-top: 1px solid var(--slate-100);
-        }
-
-        .info-item {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 20px;
-        }
-
-        .info-icon {
-            width: 40px;
-            height: 40px;
-            background: var(--primary-50);
-            color: var(--primary);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .info-text h4 {
-            font-size: 0.95rem;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-
-        .info-text p {
-            font-size: 0.85rem;
-            color: var(--slate-500);
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .animate-fade-in {
-        }
+        /* Branding link */
+        .auth-footer { margin-top: 40px; text-align: center; font-size: 0.85rem; color: #94a3b8; font-weight: 600; }
+        .auth-footer a { color: var(--app-primary); text-decoration: none; font-weight: 800; }
     </style>
     <?= $this->renderSection('styles') ?>
 </head>
 <body>
-
-    <div class="auth-wrapper">
-        <div class="auth-visual">
-            <div class="visual-content animate-fade-in">
-                <h2>Encontre o seu próximo lar com segurança.</h2>
-                <p>A CasaSegura ajuda milhares de angolanos a realizarem negócios imobiliários sem fraudes e com total transparência.</p>
+    <div class="split-layout">
+        <!-- Visualization Panel -->
+        <div class="auth-side-panel">
+            <img src="/img/casasegura_auth_illustration.png" class="auth-image" alt="Vibe">
+            <div class="auth-overlay"></div>
+            <div class="auth-side-content">
+                <div style="margin-bottom: 60px;">
+                    <img src="/img/logo.png" alt="Logo" style="height: 60px; filter: brightness(0) invert(1);">
+                </div>
+                <h2>A sua nova casa em cada clique.</h2>
+                <p>Junte-se à plataforma imobiliária mais segura de Angola. Proteção antifraude, contratos digitais e os melhores imóveis do mercado.</p>
+                
+                <div style="margin-top: 60px; display: flex; gap: 24px;">
+                    <div><h4 style="font-size: 1.5rem; font-weight: 900;">100%</h4><p style="font-size: 0.8rem; opacity: 0.6;">Seguro</p></div>
+                    <div><h4 style="font-size: 1.5rem; font-weight: 900;">24/7</h4><p style="font-size: 0.8rem; opacity: 0.6;">Suporte</p></div>
+                    <div><h4 style="font-size: 1.5rem; font-weight: 900;">ANG</h4><p style="font-size: 0.8rem; opacity: 0.6;">Market</p></div>
+                </div>
             </div>
         </div>
 
-        <div class="auth-content">
-            <div class="auth-logo">
-                <a href="/"><img src="/img/logo.png" alt="CasaSegura"></a>
-            </div>
-
-            <div class="auth-form-container">
-                <?= $this->renderSection('content') ?>
-
-                <!-- Informacoes no lado direito (dentro do scroll de conteudo) -->
-                <div class="info-section animate-fade-in" style="animation-delay: 0.2s;">
-                    <?= $this->renderSection('info') ?>
+        <!-- Form Panel -->
+        <div class="auth-form-panel">
+            <div class="auth-form-inner">
+                <div class="mobile-logo">
+                    <a href="/"><img src="/img/logo.png" alt="CasaSegura"></a>
                 </div>
                 
-                <p style="margin-top: 40px; color: var(--slate-400); font-size: 0.8rem;">
-                    &copy; <?= date('Y') ?> CasaSegura. Todos os direitos reservados.
-                </p>
+                <?= $this->renderSection('content') ?>
+
+                <div class="auth-footer">
+                    &copy; <?= date('Y') ?> CasaSegura • Made with 🧡 in Angola
+                </div>
             </div>
         </div>
     </div>

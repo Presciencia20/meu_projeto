@@ -22,9 +22,15 @@ class PropertyModel extends Model
         'images',
         'owner_id',
         'status',
+        'type',
         'is_verified',
         'latitude',
-        'longitude'
+        'longitude',
+        'property_doc_path',
+        'property_doc_type',
+        'rejection_reason',
+        'price_flag',
+        'is_premium'
     ];
 
     protected $useTimestamps = true;
@@ -49,5 +55,46 @@ class PropertyModel extends Model
         }
 
         return $builder->get()->getResultArray();
+    }
+
+    // Haversine Distance Logic
+    public function getNearProperties($lat, $lng, $radius = 10) // default 10km
+    {
+        $all = $this->where('status', 'available')->findAll();
+        $result = [];
+
+        foreach ($all as $p) {
+            if (empty($p['latitude']) || empty($p['longitude'])) continue;
+
+            $dist = $this->calculateDistance($lat, $lng, $p['latitude'], $p['longitude']);
+            
+            if ($dist <= $radius) {
+                $p['distance'] = $dist;
+                $result[] = $p;
+            }
+        }
+
+        // Sort by distance
+        usort($result, function($a, $b) {
+            return $a['distance'] <=> $b['distance'];
+        });
+
+        return $result;
+    }
+
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
+    {
+        $earthRadius = 6371; // km
+        
+        $dLat = deg2rad((float)$lat2 - (float)$lat1);
+        $dLon = deg2rad((float)$lon2 - (float)$lon1);
+        
+        $a = sin($dLat/2) * sin($dLat/2) + 
+             cos(deg2rad((float)$lat1)) * cos(deg2rad((float)$lat2)) * 
+             sin($dLon/2) * sin($dLon/2);
+             
+        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+        
+        return $earthRadius * $c;
     }
 }

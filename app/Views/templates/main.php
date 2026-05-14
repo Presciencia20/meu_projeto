@@ -2,513 +2,395 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title><?= $this->renderSection('title') ?> | CasaSegura</title>
+    <link rel="icon" type="image/png" href="/img/logo.png">
     
-    <!-- Google Fonts: Poppins & Inter -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
-    <!-- Lucide Icons (CDN) -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- App Theme Styles -->
+    <link rel="stylesheet" href="/css/app_navigation.css">
     
     <style>
+        /* Global Reset & Base Styles */
         :root {
-            --primary: #1A56DB;
-            --primary-50: #EFF6FF;
-            --primary-100: #DBEAFE;
-            --primary-600: #1C64F2;
-            --primary-700: #1A56DB;
-            --primary-dark: #1241A3;
-            --secondary: #059669;
-            --secondary-50: #ECFDF5;
-            --accent: #F59E0B;
-            --danger: #DC2626;
-            --danger-50: #FEF2F2;
-            --slate-50: #F9FAFB;
-            --slate-100: #F1F5F9;
-            --slate-200: #E2E8F0;
-            --slate-300: #CBD5E1;
-            --slate-400: #94A3B8;
-            --slate-500: #6B7280;
-            --slate-600: #4B5563;
-            --slate-800: #1F2937;
-            --slate-900: #111827;
-            --white: #ffffff;
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
-            --glass: rgba(255, 255, 255, 0.95);
-            --radius-lg: 24px;
-            --radius-md: 12px;
-            --radius-sm: 8px;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
-        }
-
-        h1, h2, h3, h4, .font-heading {
-            font-family: 'Poppins', sans-serif;
+            --app-primary: #2563eb;
+            --app-primary-dark: #1d4ed8;
+            --app-primary-50: #eff6ff;
+            --gray-100: #F8F9FA;
+            --gray-200: #F0F2F5;
+            --gray-300: #E5E7EB;
+            --gray-500: #94a3b8;
+            --gray-600: #64748b;
+            --gray-800: #1e293b;
         }
 
         body {
-            background-color: var(--slate-50);
-            color: var(--slate-900);
-            line-height: 1.6;
-            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background: #f8f9fa;
+            color: #1a1a2e;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* Premium Navbar */
-        .navbar {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 95%;
-            max-width: 1200px;
-            background: var(--glass);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            border-radius: var(--radius-lg);
-            padding: 10px 32px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            z-index: 1000;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
-            transition: all 0.3s ease;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            text-decoration: none;
-            background: white;
-            padding: 8px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-        }
-
-        .logo:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
-        .logo img {
-            height: 48px;
-            width: auto;
-        }
-
-        .nav-links {
-            display: none;
-            gap: 28px;
-        }
-
-        @media (min-width: 992px) {
-            .nav-links { display: flex; }
-        }
-
-        .nav-link {
-            text-decoration: none;
-            color: var(--slate-600);
-            font-weight: 600;
-            font-size: 0.95rem;
-            transition: all 0.2s;
-            position: relative;
-        }
-
-        .nav-link:hover, .nav-link.active { color: var(--primary); }
-        .nav-link.active::after {
-            content: '';
-            position: absolute;
-            bottom: -4px;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: var(--primary);
-            border-radius: 2px;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            padding: 12px 28px;
-            border-radius: var(--radius-md);
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: all 0.2s;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(26, 86, 219, 0.1);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(26, 86, 219, 0.2);
-        }
-
-        .btn-secondary {
-            background: var(--white);
-            color: var(--slate-900);
-            padding: 12px 28px;
-            border-radius: var(--radius-md);
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: all 0.2s;
-            border: 1px solid var(--slate-200);
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .btn-secondary:hover {
-            background: var(--slate-50);
-            border-color: var(--slate-300);
-        }
-
-        .container {
-            width: 90%;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding-top: 130px;
-            min-height: 80vh;
-        }
-
-        /* Global Components */
-        .badge-verified {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--secondary-50);
-            color: var(--secondary);
-            padding: 6px 14px;
-            border-radius: 99px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            border: 1px solid rgba(5, 150, 105, 0.1);
-        }
-
-        .input-modern {
-            width: 100%;
-            padding: 16px 20px;
-            background: var(--slate-50);
-            border: 1px solid var(--slate-200);
-            border-radius: 16px;
-            font-size: 0.95rem;
-            font-weight: 500;
-            transition: all 0.2s;
-            outline: none;
-        }
-
-        .input-modern:focus {
-            background: white;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 4px var(--primary-50);
-        }
-
-        .alert {
-            padding: 16px 20px;
-            border-radius: 16px;
-            margin-bottom: 24px;
-            font-size: 0.9rem;
-            font-weight: 500;
+        .logo-app {
             display: flex;
             align-items: center;
             gap: 12px;
-        }
-
-        .alert-error {
-            background: var(--danger-50);
-            color: var(--danger);
-            border: 1px solid rgba(220, 38, 38, 0.1);
-        }
-
-        .alert-success {
-            background: var(--secondary-50);
-            color: var(--secondary);
-            border: 1px solid rgba(5, 150, 105, 0.1);
-        }
-
-        /* Mobile Menu */
-        .nav-toggle {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 8px;
-            z-index: 2001;
-        }
-
-        .nav-toggle span {
-            display: block;
-            width: 24px;
-            height: 2px;
-            background: var(--slate-900);
-            border-radius: 2px;
-            transition: all 0.3s ease;
-        }
-
-        @media (max-width: 991px) {
-            #navToggle { display: flex !important; }
-        }
-
-        .mobile-menu-overlay {
-            position: fixed;
-            top: 0;
-            right: -100%;
-            width: 100%;
-            height: 100vh;
-            background: var(--white);
-            z-index: 2000;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            padding: 100px 40px;
-            display: flex;
-            flex-direction: column;
-            gap: 32px;
-        }
-
-        .mobile-menu-overlay.active {
-            right: 0;
-        }
-
-        .mobile-nav-link {
-            font-size: 2rem;
-            font-weight: 800;
             text-decoration: none;
-            color: var(--slate-900);
-            font-family: 'Poppins', sans-serif;
+            color: #1e293b;
         }
 
-        /* Footer */
-        .site-footer {
-            background: var(--white);
-            padding: 100px 0 40px;
-            margin-top: 120px;
-            border-top: 1px solid var(--slate-200);
+        .logo-app img { height: 34px; width: auto; object-fit: contain; }
+        .logo-app span { 
+            font-weight: 800; 
+            font-family: 'Outfit'; 
+            font-size: 1.35rem; 
+            letter-spacing: -0.03em; 
+            background: linear-gradient(135deg, #1e293b, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        .footer-grid {
-            display: grid;
-            grid-template-columns: 1.5fr 1fr 1fr 1.2fr;
-            gap: 40px;
-            margin-bottom: 60px;
+        @media (max-width: 768px) {
+            :root {
+                --app-header-height: 64px;
+            }
+            .logo-app span { font-size: 1.1rem; }
+            .header-user-badge { width: 32px; height: 32px; font-size: 0.75rem; }
+            .header-actions { gap: 8px; }
+            .header-btn { width: 36px; height: 36px; }
         }
 
-        @media (max-width: 992px) {
-            .footer-grid { grid-template-columns: 1fr 1fr; }
+        @media (max-width: 480px) {
+            .logo-app span { display: none; }
         }
 
-        @media (max-width: 576px) {
-            .footer-grid { grid-template-columns: 1fr; }
+        .btn-circle {
+            transition: all 0.2s;
         }
 
-        .footer-logo img { height: 48px; margin-bottom: 24px; }
-        .footer-desc { color: var(--slate-500); font-size: 0.95rem; line-height: 1.8; }
-        .footer-head { font-weight: 700; margin-bottom: 24px; font-size: 1.1rem; color: var(--slate-900); }
-        .footer-links { list-style: none; }
-        .footer-links li { margin-bottom: 14px; }
-        .footer-links a { text-decoration: none; color: var(--slate-500); transition: 0.2s; font-weight: 500; }
-        .footer-links a:hover { color: var(--primary); padding-left: 6px; }
+        .btn-circle:hover { background: var(--gray-300); }
 
-        .footer-bottom {
-            padding-top: 40px;
-            border-top: 1px solid var(--slate-100);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 20px;
-            color: var(--slate-400);
-            font-size: 0.9rem;
+        /* Animation Classes */
+        .page-transition {
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        /* Animations */
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .animate-fade-in {
+        /* Micro-interactions */
+        .click-feedback:active {
+            transform: scale(0.95);
         }
 
+        .skeleton {
+            background: linear-gradient(90deg, #f0f2f5 25%, #e2e8f0 50%, #f0f2f5 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: 12px;
+        }
+
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .img-modern { transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+        .img-modern:hover { transform: scale(1.05); }
+
+        /* Premium Alerts */
+        .alert-premium {
+            padding: 14px 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            border-left: 4px solid transparent;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .alert-success {
+            background: #ffffff;
+            color: #059669;
+            border-left-color: #10b981;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+
+        .alert-error {
+            background: #ffffff;
+            color: #ef4444;
+            border-left-color: #ef4444;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
     </style>
     <?= $this->renderSection('styles') ?>
+    <style>
+        /* Leaflet Fix: Ensure tiles are visible */
+        .leaflet-tile-container img {
+            max-width: none !important;
+            max-height: none !important;
+        }
+        /* Fix for markers in some mobile devices */
+        .leaflet-marker-icon {
+            max-width: none !important;
+        }
+    </style>
 </head>
 <body>
 
-    <?php $currentPath = '/' . ltrim(current_url(true)->getPath(), '/'); ?>
-    <nav class="navbar" id="mainNavbar">
-        <a href="/" class="logo">
-            <img src="/img/logo.png" alt="CasaSegura Logo">
-        </a>
+    <?php 
+        $currentPath = '/' . ltrim(current_url(true)->getPath(), '/'); 
+        $isLoggedIn = session()->get('isLoggedIn');
+        $userType = session()->get('user_type');
 
-        <div class="nav-links">
-            <a href="/comprar" class="nav-link <?= ($currentPath === '/comprar') ? 'active' : '' ?>">Comprar</a>
-            <a href="/alugar"  class="nav-link <?= ($currentPath === '/alugar')  ? 'active' : '' ?>">Arrendar</a>
-            <a href="/vender"  class="nav-link <?= ($currentPath === '/vender')  ? 'active' : '' ?>">Vender</a>
-            <a href="/sobre"   class="nav-link <?= ($currentPath === '/sobre')   ? 'active' : '' ?>">Sobre</a>
-        </div>
+        // Define Auth Pages (No menus)
+        $authRoutes = ['/login', '/signup', '/forgot-password', '/auth/verify-otp', '/auth/step2', '/auth/reset'];
+        $isAuthPage = false;
+        
+        // Normalize path to handle /index.php/login
+        $normPath = str_replace('/index.php', '', $currentPath);
+        
+        foreach($authRoutes as $route) {
+            if (str_starts_with($normPath, $route)) {
+                $isAuthPage = true;
+                break;
+            }
+        }
 
-        <div style="display: flex; gap: 16px; align-items: center;">
-            <div class="nav-links">
-                <?php if (session()->get('isLoggedIn')): ?>
-                    <?php if (session()->get('user_type') === 'Admin'): ?>
-                        <a href="/admin/dashboard" class="nav-link" style="margin-right: 8px; color: var(--primary); font-weight: 800;"><i data-lucide="shield-check" style="width: 16px; display: inline-block;"></i> Área Admin</a>
-                    <?php else: ?>
-                        <a href="/dashboard" class="nav-link" style="margin-right: 8px;">Painel</a>
-                    <?php endif; ?>
-                    
-                    <a href="/user/profile" style="display:flex; align-items:center; text-decoration:none; margin-right: 8px;" title="Ver Meu Perfil">
-                        <?php 
-                            $nameParts = explode(' ', session()->get('full_name') ?? 'User');
-                            $initials = strtoupper(substr($nameParts[0], 0, 1));
-                            if(count($nameParts) > 1) {
-                                $initials .= strtoupper(substr(end($nameParts), 0, 1));
-                            }
-                        ?>
-                        <div style="width:40px; height:40px; border-radius:50%; background:var(--slate-100); color:var(--slate-700); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.95rem; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.2s;">
-                            <?= $initials ?>
-                        </div>
+        $isAdminPage = str_starts_with($normPath, '/admin');
+    ?>
+
+    <div class="app-shell">
+        <?php if (!$isAuthPage && !$isAdminPage): ?>
+        <!-- Premium Universal Header -->
+        <header class="app-header">
+            <div class="header-container">
+                <div class="header-logo">
+                    <a href="/" class="logo-app">
+                        <img src="/img/logo.png" alt="CasaSegura" onerror="this.src='/img/logo_alt.png'">
+                        <span>CasaSegura</span>
                     </a>
+                </div>
+                <div class="header-actions">
+                    <a href="<?= site_url('search') ?>" class="header-btn"><i class="ph-bold ph-magnifying-glass"></i></a>
+                    
+                    <?php if ($isLoggedIn): ?>
+                        <!-- Mensagens / Notificações -->
+                        <a href="<?= site_url('chat') ?>" class="header-btn" style="position: relative;">
+                            <i class="ph-bold ph-chat-centered-text"></i>
+                            <?php if ($unreadMessages > 0): ?>
+                                <span class="notification-badge"><?= $unreadMessages ?></span>
+                            <?php endif; ?>
+                        </a>
 
-                    <a href="/logout" class="btn-primary" style="background: var(--danger);"><i data-lucide="log-out" style="width: 16px;"></i> Sair</a>
-                <?php else: ?>
-                    <a href="/login" class="nav-link" style="margin-right: 8px;">Entrar</a>
-                    <a href="/signup" class="btn-primary">Registar</a>
-                <?php endif; ?>
+                        <div class="header-role-switcher">
+                            <div class="role-badge-trigger">
+                                <i class="ph-bold ph-user-circle"></i>
+                                <?php 
+                                    $roleLabels = ['admin' => 'Admin', 'owner' => 'Proprietário', 'client' => 'Inquilino'];
+                                    $currentRole = session()->get('active_role') ?: 'client';
+                                ?>
+                                <span><?= $roleLabels[$currentRole] ?? ucfirst($currentRole) ?></span>
+                            </div>
+                            <div class="role-dropdown">
+                                <div class="dropdown-header">Escolher Perfil</div>
+                                <?php if (session()->get('is_admin')): ?>
+                                    <a href="/switch-role/admin" class="dropdown-item <?= session()->get('active_role') == 'admin' ? 'active' : '' ?>">
+                                        <i class="ph-bold ph-shield-star"></i> Admin
+                                    </a>
+                                <?php endif; ?>
+                                <?php if (session()->get('is_owner')): ?>
+                                    <a href="/switch-role/owner" class="dropdown-item <?= session()->get('active_role') == 'owner' ? 'active' : '' ?>">
+                                        <i class="ph-bold ph-house-line"></i> Proprietário
+                                    </a>
+                                <?php endif; ?>
+                                <?php if (session()->get('is_client')): ?>
+                                    <a href="/switch-role/client" class="dropdown-item <?= session()->get('active_role') == 'client' ? 'active' : '' ?>">
+                                        <i class="ph-bold ph-user"></i> Inquilino
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <?php $dashboardUrl = (session()->get('active_role') === 'admin') ? site_url('admin/dashboard') : site_url('dashboard'); ?>
+                        <a href="<?= $dashboardUrl ?>" class="header-user-badge-link">
+                            <div class="header-user-badge">
+                                <?php if (session()->get('user_photo')): ?>
+                                    <img src="<?= base_url(session()->get('user_photo')) ?>" alt="Perfil" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                <?php else: ?>
+                                    <span><?= strtoupper(substr(session()->get('full_name') ?? 'G', 0, 1)) ?></span>
+                                <?php endif; ?>
+                            </div>
+                        </a>
+                    <?php endif; ?>
+                </div>
             </div>
-            <button class="nav-toggle" id="navToggle" style="display: none;">
-                <span></span><span></span><span></span>
-            </button>
-        </div>
-    </nav>
+        </header>
+        <?php endif; ?>
 
-    <!-- Mobile Menu Overlay -->
-    <div class="mobile-menu-overlay" id="mobileMenu">
-        <a href="/comprar" class="mobile-nav-link">Comprar</a>
-        <a href="/alugar"  class="mobile-nav-link">Arrendar</a>
-        <a href="/vender"  class="mobile-nav-link">Vender</a>
-        <a href="/sobre"   class="mobile-nav-link">Sobre</a>
-        <hr style="border: none; border-top: 1px solid var(--slate-100);">
-        <?php if (session()->get('isLoggedIn')): ?>
-            <?php if (session()->get('user_type') === 'Admin'): ?>
-                <a href="/admin/dashboard" class="mobile-nav-link" style="color: var(--primary);">Área Admin</a>
+        <div class="app-body">
+            <main class="app-main" style="<?= $isAuthPage ? 'padding-top: 20px;' : '' ?>">
+                <?php if (session()->getFlashdata('success')): ?>
+                    <div class="alert-premium alert-success animate-fade-in">
+                        <i class="ph-fill ph-check-circle"></i>
+                        <?= session()->getFlashdata('success') ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (session()->getFlashdata('error')): ?>
+                    <div class="alert-premium alert-error animate-fade-in">
+                        <i class="ph-fill ph-warning-circle"></i>
+                        <?= session()->getFlashdata('error') ?>
+                    </div>
+                <?php endif; ?>
+
+                <?= $this->renderSection('content') ?>
+                
+                <?php if (!$isAuthPage && !$isAdminPage): ?>
+                <footer style="margin-top: 60px; padding: 20px 0 100px 0; border-top: 1px solid #eee; text-align: center; color: #999; font-size: 0.8rem;">
+                    <p>© <?= date('Y') ?> CasaSegura Angola. Proteção em cada contrato.</p>
+                </footer>
+                <?php endif; ?>
+            </main>
+        </div>
+
+        <!-- NEW FLOATING BOTTOM NAVIGATION (Universal) -->
+        <?php if (!$isAuthPage && !$isAdminPage): ?>
+        <nav class="bottom-nav">
+            <a href="/" class="nav-item <?= ($currentPath === '/') ? 'active' : '' ?>">
+                <div class="nav-item-icon" style="font-size: 1.5rem;"><i class="ph-bold ph-house"></i></div>
+                <span class="nav-label">Início</span>
+            </a>
+            
+            <a href="/near-me" class="nav-item <?= ($currentPath === '/near-me') ? 'active' : '' ?>">
+                <div class="nav-item-icon" style="font-size: 1.5rem;"><i class="ph-bold ph-navigation-arrow"></i></div>
+                <span class="nav-label">Perto</span>
+            </a>
+
+            <a href="/search" class="nav-item">
+                <div class="nav-item-icon nav-action-button attention-pulse" style="width: 54px; height: 54px;">
+                    <i class="ph-bold ph-magnifying-glass" style="font-size: 1.6rem;"></i>
+                </div>
+            </a>
+
+            <a href="/property/create" class="nav-item <?= ($currentPath === '/property/create') ? 'active' : '' ?>">
+                <div class="nav-item-icon" style="font-size: 1.5rem;"><i class="ph-bold ph-plus-circle"></i></div>
+                <span class="nav-label">Publicar</span>
+            </a>
+
+            <?php if ($isLoggedIn): ?>
+                <a href="<?= (isset($userType) && $userType === 'Admin') ? '/admin/dashboard' : '/dashboard' ?>" class="nav-item <?= (str_contains($currentPath, 'dashboard') || str_contains($currentPath, 'profile')) ? 'active' : '' ?>">
+                    <div class="nav-item-icon" style="font-size: 1.5rem;"><i class="ph-bold ph-user-circle"></i></div>
+                    <span class="nav-label">Perfil</span>
+                </a>
             <?php else: ?>
-                <a href="/dashboard" class="mobile-nav-link">Painel</a>
+                <a href="/login" class="nav-item">
+                    <div class="nav-item-icon" style="font-size: 1.5rem;"><i class="ph-bold ph-user"></i></div>
+                    <span class="nav-label">Entrar</span>
+                </a>
             <?php endif; ?>
-            <a href="/logout"  class="btn-primary" style="font-size: 1.2rem; background: var(--danger); padding: 20px;">Sair</a>
-        <?php else: ?>
-            <a href="/login"   class="mobile-nav-link">Entrar</a>
-            <a href="/signup"  class="btn-primary" style="font-size: 1.2rem; padding: 20px;">Registar Agora</a>
+        </nav>
         <?php endif; ?>
     </div>
 
-    <div class="container">
-        <?= $this->renderSection('content') ?>
-    </div>
-
-    <footer class="site-footer">
-        <div style="width: 90%; max-width: 1200px; margin: 0 auto;">
-            <div class="footer-grid">
-                <div>
-                    <div class="footer-logo"><img src="/img/logo.png" alt="CasaSegura"></div>
-                    <p class="footer-desc">A plataforma líder em negócios imobiliários seguros em Angola. Protegemos o seu dinheiro e garantimos a validade de cada contrato.</p>
-                </div>
-                <div>
-                    <h4 class="footer-head">Plataforma</h4>
-                    <ul class="footer-links">
-                        <li><a href="/comprar">Comprar Imóveis</a></li>
-                        <li><a href="/alugar">Arrendar Casa</a></li>
-                        <li><a href="/vender">Venda Directa</a></li>
-                        <li><a href="/dashboard">Painel de Controlo</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="footer-head">Suporte</h4>
-                    <ul class="footer-links">
-                        <li><a href="/sobre">Sobre a CasaSegura</a></li>
-                        <li><a href="/ajuda">Centro de Segurança</a></li>
-                        <li><a href="/termos">Termos & Condições</a></li>
-                        <li><a href="/privacidade">Privacidade</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="footer-head">Contacto</h4>
-                    <ul class="footer-links">
-                        <li style="display: flex; align-items: center; gap: 12px; color: var(--slate-500);"><i data-lucide="map-pin" style="width: 18px;"></i> Luanda, Angola</li>
-                        <li style="display: flex; align-items: center; gap: 12px; color: var(--slate-500);"><i data-lucide="phone" style="width: 18px;"></i> +244 944 013 345</li>
-                        <li style="display: flex; align-items: center; gap: 12px; color: var(--slate-500);"><i data-lucide="mail" style="width: 18px;"></i> apoio@arrendaseguro.ao</li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="footer-bottom">
-                <p>© <?= date('Y') ?> CasaSegura Angola. Todos os direitos reservados.</p>
-                <div style="display: flex; gap: 24px;">
-                    <a href="#" class="footer-desc">Facebook</a>
-                    <a href="#" class="footer-desc">Instagram</a>
-                    <a href="#" class="footer-desc">LinkedIn</a>
-                </div>
-            </div>
-        </div>
-    </footer>
-
+    <!-- Icons: Phosphor Icons (Premium DuoTone) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script>
-        // Init Lucide Icons
-        lucide.createIcons();
-
-        // Mobile Menu Toggle logic
-        const navToggle = document.getElementById('navToggle');
-        const mobileMenu = document.getElementById('mobileMenu');
-        const body = document.body;
-
-        navToggle.addEventListener('click', () => {
-            mobileMenu.classList.toggle('active');
-            navToggle.classList.toggle('active');
-            body.style.overflow = mobileMenu.classList.contains('active') ? 'hidden' : 'auto';
+        // Role Switcher Toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const trigger = document.querySelector('.role-badge-trigger');
+            const switcher = document.querySelector('.header-role-switcher');
             
-            // Transform hamburger to X
-            const spans = navToggle.querySelectorAll('span');
-            if(mobileMenu.classList.contains('active')) {
-                spans[0].style.transform = 'rotate(45deg) translate(5px, 5px)';
-                spans[1].style.opacity = '0';
-                spans[2].style.transform = 'rotate(-45deg) translate(7px, -7px)';
-            } else {
-                spans[0].style.transform = 'none';
-                spans[1].style.opacity = '1';
-                spans[2].style.transform = 'none';
+            if (trigger) {
+                trigger.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    switcher.classList.toggle('active');
+                });
+
+                document.addEventListener('click', function() {
+                    switcher.classList.remove('active');
+                });
             }
         });
 
-        // Sticky Navbar effect
-        window.addEventListener('scroll', () => {
-            const navbar = document.getElementById('mainNavbar');
-            if (window.scrollY > 20) {
-                navbar.style.top = '10px';
-                navbar.style.boxShadow = '0 20px 40px rgba(0,0,0,0.08)';
-            } else {
-                navbar.style.top = '20px';
-                navbar.style.boxShadow = '0 10px 30px rgba(0,0,0,0.03)';
+        async function toggleFavorite(id) {
+            const btn = event.currentTarget;
+            const icon = btn.querySelector('i');
+            const isLoggedIn = <?= $isLoggedIn ? 'true' : 'false' ?>;
+
+            if (!isLoggedIn) {
+                window.location.href = '/login';
+                return;
             }
-        });
+            
+            btn.style.transform = 'scale(0.8)';
+            setTimeout(() => btn.style.transform = '', 150);
+
+            // Optimistic UI update (optional, but makes it instantly responsive)
+            const wasFavorited = icon.classList.contains('ph-heart-fill');
+            if (wasFavorited) {
+                icon.classList.remove('ph-heart-fill', 'ph-fill');
+                icon.classList.add('ph-heart', 'ph-duotone');
+                icon.style.color = '';
+            } else {
+                icon.classList.remove('ph-heart', 'ph-duotone');
+                icon.classList.add('ph-heart-fill', 'ph-fill');
+                icon.style.color = '#ef4444';
+            }
+
+            try {
+                const response = await fetch(`/property/favorite/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                const data = await response.json();
+
+                if (data.status !== 'success') {
+                    // Revert on failure
+                    if (wasFavorited) {
+                        icon.classList.remove('ph-heart', 'ph-duotone');
+                        icon.classList.add('ph-heart-fill', 'ph-fill');
+                        icon.style.color = '#ef4444';
+                    } else {
+                        icon.classList.remove('ph-heart-fill', 'ph-fill');
+                        icon.classList.add('ph-heart', 'ph-duotone');
+                        icon.style.color = '';
+                    }
+                    if (data.message) alert(data.message);
+                }
+            } catch (error) {
+                console.error("Erro ao favoritar:", error);
+                alert("Ocorreu um erro de rede. Tente comunicar-se novamente.");
+                // Revert on network error
+                if (wasFavorited) {
+                    icon.classList.remove('ph-heart', 'ph-duotone');
+                    icon.classList.add('ph-heart-fill', 'ph-fill');
+                    icon.style.color = '#ef4444';
+                } else {
+                    icon.classList.remove('ph-heart-fill', 'ph-fill');
+                    icon.classList.add('ph-heart', 'ph-duotone');
+                    icon.style.color = '';
+                }
+            }
+        }
     </script>
     <?= $this->renderSection('scripts') ?>
 </body>

@@ -19,6 +19,7 @@ class ProfileReputationSystem extends Migration
             'user_id' => [
                 'type'       => 'INT',
                 'constraint' => 11,
+                'unsigned'   => true,
                 'unique'     => true,
             ],
             'photo' => [
@@ -66,6 +67,7 @@ class ProfileReputationSystem extends Migration
             'user_id' => [
                 'type'       => 'INT',
                 'constraint' => 11,
+                'unsigned'   => true,
             ],
             'total_reviews' => [
                 'type'       => 'INT',
