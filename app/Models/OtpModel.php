@@ -12,26 +12,26 @@ class OtpModel extends Model
     protected $useTimestamps = true;
     protected $updatedField  = '';
 
-    protected $allowedFields = ['telemovel', 'codigo', 'tipo', 'expira_em', 'usado'];
+    protected $allowedFields = ['identifier', 'codigo', 'tipo', 'expira_em', 'usado'];
 
     /**
      * Gera um código OTP de 6 dígitos, invalida os anteriores para o mesmo
-     * telemóvel e tipo, e guarda o novo na base de dados.
+     * identificador e tipo, e guarda o novo na base de dados.
      */
-    public function generateAndSave(string $telemovel, string $tipo): string
+    public function generateAndSave(string $identifier, string $tipo): string
     {
-        // Invalidar OTPs anteriores do mesmo tipo para este número
-        $this->where('telemovel', $telemovel)
+        // Invalidar OTPs anteriores do mesmo tipo para este identificador
+        $this->where('identifier', $identifier)
              ->where('tipo', $tipo)
              ->where('usado', 0)
              ->set(['usado' => 1])
              ->update();
 
-        $codigo   = env('SMS_FAKE', false) ? '123456' : (string) random_int(100000, 999999);
-        $expiraEm = date('Y-m-d H:i:s', strtotime('+5 minutes'));
+        $codigo   = (env('SMS_FAKE', false) || env('SMS_FAKE', false) === 'true') ? '123456' : (string) random_int(100000, 999999);
+        $expiraEm = date('Y-m-d H:i:s', strtotime('+10 minutes')); // Aumentado para 10 minutos para dar margem
 
         $this->insert([
-            'telemovel' => $telemovel,
+            'identifier' => $identifier,
             'codigo'    => $codigo,
             'tipo'      => $tipo,
             'expira_em' => $expiraEm,
@@ -45,13 +45,16 @@ class OtpModel extends Model
      * Verifica se o código é válido (não expirado, não usado, tipo correcto).
      * Se válido, marca como usado e retorna true.
      */
-    public function verify(string $telemovel, string $codigo, string $tipo): bool
+    public function verify(string $identifier, string $codigo, string $tipo): bool
     {
-        $record = $this->where('telemovel', $telemovel)
+        // Adicionamos uma margem de 10 segundos para compensar dessincronização de relógios
+        $now = date('Y-m-d H:i:s', strtotime('-10 seconds'));
+
+        $record = $this->where('identifier', $identifier)
                        ->where('codigo', $codigo)
                        ->where('tipo', $tipo)
                        ->where('usado', 0)
-                       ->where('expira_em >', date('Y-m-d H:i:s'))
+                       ->where('expira_em >', $now)
                        ->first();
 
         if (! $record) {
@@ -67,10 +70,10 @@ class OtpModel extends Model
      * Verifica se um número já tem um OTP válido recente (evitar spam de SMS).
      * Retorna os segundos restantes ou 0 se pode reenviar.
      */
-    public function cooldownRemaining(string $telemovel, string $tipo): int
+    public function cooldownRemaining(string $identifier, string $tipo): int
     {
         // Impede reenvio antes de 60 segundos
-        $record = $this->where('telemovel', $telemovel)
+        $record = $this->where('identifier', $identifier)
                        ->where('tipo', $tipo)
                        ->where('usado', 0)
                        ->where('expira_em >', date('Y-m-d H:i:s'))

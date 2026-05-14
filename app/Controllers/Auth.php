@@ -46,9 +46,10 @@ class Auth extends BaseController
         $identifier = $this->request->getPost('identifier'); // Pode ser email ou telefone
         $method     = $this->request->getPost('method');     // 'email' ou 'phone'
 
-        if ($method === 'phone') {
+        // Permitir telemóvel para teste em desenvolvimento
+        if ($method === 'phone' && ! (env('SMS_FAKE') || env('SMS_FAKE') === 'true')) {
             return redirect()->back()
-                ->with('error', 'O envio por SMS está temporariamente indisponível. Por favor use o Email.')
+                ->with('error', 'O envio por SMS real está temporariamente indisponível. Por favor use o Email.')
                 ->withInput();
         }
 
@@ -110,7 +111,7 @@ class Auth extends BaseController
 
         // Calcular tempo restante para o OTP
         $identifier = session()->get('reg_identifier');
-        $record = $this->otpModel->where('telemovel', $identifier)
+        $record = $this->otpModel->where('identifier', $identifier)
                                  ->where('tipo', 'registo')
                                  ->where('usado', 0)
                                  ->where('expira_em >', date('Y-m-d H:i:s'))
