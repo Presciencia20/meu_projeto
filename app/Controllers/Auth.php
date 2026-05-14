@@ -91,7 +91,7 @@ class Auth extends BaseController
         session()->set('reg_method', $method);
 
         // Em modo desenvolvimento
-        if (env('SMS_FAKE', true)) {
+        if (env('SMS_FAKE') || env('SMS_FAKE') === 'true') {
             session()->setFlashdata('dev_otp_code', $codigo);
         }
 
@@ -496,7 +496,7 @@ class Auth extends BaseController
         session()->set('reset_email', $email);
 
         // Debug em desenvolvimento
-        if (env('SMS_FAKE', true)) {
+        if (env('SMS_FAKE') || env('SMS_FAKE') === 'true') {
             session()->setFlashdata('dev_otp_code', $codigo);
         }
 
